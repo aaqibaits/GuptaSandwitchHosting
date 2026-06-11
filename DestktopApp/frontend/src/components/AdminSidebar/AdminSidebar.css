@@ -1,0 +1,128 @@
+/* components/AdminSidebar/AdminSidebar.css */
+.sidebar1 {
+  width: 210px;
+  min-width: 210px;
+  background: #1a1208;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sb-brand1 {
+  padding: 18px 16px 14px;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.sb-brand-name1 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f5c842;
+}
+
+.sb-brand-sub1 {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 2px;
+}
+
+.sb-nav1 {
+  padding: 10px 0 4px;
+  flex: 1;
+}
+
+.sb-nav-label1 {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 1px;
+  padding: 6px 16px 2px;
+}
+
+.nav-item1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  border-left: 2px solid transparent;
+  transition: all 0.12s;
+}
+
+.nav-item1:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.nav-item1.active {
+  color: #f5c842;
+  border-left-color: #f5c842;
+  background: rgba(245, 200, 66, 0.07);
+}
+
+.nav-item1 i {
+  font-size: 16px;
+  width: 18px;
+}
+
+.sb-foot1 {
+  padding: 12px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.role-pill1 {
+  background: rgba(245, 200, 66, 0.1);
+  border: 0.5px solid rgba(245, 200, 66, 0.25);
+  border-radius: 7px;
+  padding: 8px 10px;
+}
+
+.role-pill1 span {
+  font-size: 12px;
+  color: #f5c842;
+  display: block;
+}
+
+.role-pill1 small {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Logout Button Styles */
+.logout-btn1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  width: 100%;
+}
+
+.logout-btn1:hover {
+  background: rgba(229, 57, 53, 0.2);
+  border-color: rgba(229, 57, 53, 0.5);
+  color: #ff6b6b;
+}
+
+.logout-btn1 i {
+  font-size: 16px;
+}
+
+.logout-btn1 span {
+  font-size: 13px;
+}
+
+/* Optional: Add confirmation dialog styling */
+.logout-btn1:active {
+  transform: scale(0.98);
+}

@@ -1,0 +1,136 @@
+/* ConfirmationModal.css */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.confirm-modal-box {
+  background: var(--surface);
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  animation: confirmModalScaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes confirmModalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.confirm-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.confirm-modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.confirm-modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.confirm-modal-close:hover {
+  background: var(--orange-light);
+  color: var(--orange);
+}
+
+.confirm-modal-body {
+  padding: 24px 20px;
+}
+
+.confirm-modal-body p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.confirm-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #FAF9F6;
+}
+
+.confirm-btn-cancel {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.confirm-btn-cancel:hover {
+  background: var(--bg);
+  color: var(--text);
+  border-color: #C5C3BC;
+}
+
+.confirm-btn-confirm {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--orange);
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.confirm-btn-confirm:hover {
+  background: #c04a06;
+}
+
+.confirm-btn-confirm.danger {
+  background: var(--red);
+}
+
+.confirm-btn-confirm.danger:hover {
+  background: #b71c1c;
+}

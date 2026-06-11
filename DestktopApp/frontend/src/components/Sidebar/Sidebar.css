@@ -1,0 +1,194 @@
+/* components/Sidebar.css */
+.sidebar {
+  width: 64px;
+  background: var(--sidebar);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  gap: 2px;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.logo-box {
+  width: 40px;
+  height: 40px;
+  background: var(--orange);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  font-weight: 800;
+  font-size: 18px;
+  color: #fff;
+}
+
+.nav-item {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6B7DB3;
+  font-size: 20px;
+  position: relative;
+  transition: all 0.15s;
+}
+
+.nav-item:hover, .nav-item.active {
+  background: rgba(232, 89, 12, 0.15);
+  color: var(--orange);
+}
+
+.nav-item .tip {
+  position: absolute;
+  left: 54px;
+  background: #111;
+  color: #fff;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 200;
+  border: 1px solid #333;
+}
+
+.nav-item:hover .tip {
+  opacity: 1;
+}
+
+.sidebar-sep {
+  width: 32px;
+  height: 1px;
+  background: #2D3561;
+  margin: 6px 0;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+/* ─────────────────────────────────────────────────────────────
+   SIDEBAR FOOTER — append this to your existing Sidebar.css
+   ───────────────────────────────────────────────────────────── */
+
+/* Make sidebar a column so footer sticks to bottom */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Footer wrapper */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 10px 0 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Avatar ── */
+.sidebar-avatar {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f5d400, #c0181a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  margin-bottom: 2px;
+  transition: transform 0.2s;
+}
+
+.sidebar-avatar:hover {
+  transform: scale(1.08);
+}
+
+.sidebar-avatar__letter {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* Tooltip that appears on avatar hover */
+.sidebar-avatar__tooltip {
+  display: none;
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1e1e2e;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-width: 170px;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+  z-index: 999;
+  pointer-events: none;
+}
+
+.sidebar-avatar:hover .sidebar-avatar__tooltip {
+  display: flex;
+}
+
+/* Arrow pointing left */
+.sidebar-avatar__tooltip::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 6px 7px 6px 0;
+  border-style: solid;
+  border-color: transparent #1e1e2e transparent transparent;
+}
+
+.sidebar-avatar__role {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #f5d400;
+}
+
+.sidebar-avatar__email {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+/* ── Logout nav item ── */
+.nav-item--logout {
+  color: #ff8a8a !important;
+}
+
+.nav-item--logout:hover {
+  background: rgba(192, 24, 26, 0.22) !important;
+  color: #ffffff !important;
+}
+
+.nav-item--logout i {
+  color: inherit;
+}

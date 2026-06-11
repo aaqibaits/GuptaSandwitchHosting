@@ -1,0 +1,23 @@
+{
+  "appId": "com.yourcompany.hotelmanagement",
+  "productName": "Hotel Management System",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*"
+  ],
+  "win": {
+    "target": "nsis",
+    "icon": "public/logo.ico"
+  },
+  "mac": {
+    "target": "dmg",
+    "icon": "public/logo.icns"
+  },
+  "linux": {
+    "target": "AppImage",
+    "icon": "public/logo.png"
+  }
+}

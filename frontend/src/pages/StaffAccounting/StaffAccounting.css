@@ -1,0 +1,353 @@
+.accounting {
+  padding: 20px;
+}
+
+.acct-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.acct-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #17202a;
+}
+.edit-btn {
+  color: #2c6e2f;
+}
+
+.acct-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+.accounting .acct-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+.accounting .metric-card {
+  background: #fdfdfb;
+  border: 1px solid #e5e3dc;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(16,24,40,0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.accounting .metric-label {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+.accounting .metric-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+}
+.accounting .metric-value--green {
+  color: #16a34a !important;
+}
+.accounting .metric-value--red {
+  color: #dc2626 !important;
+}
+.delete-btn {
+  color: #d32f2f;
+}
+.delete-btn:hover {
+  background: #ffebee;
+}
+.accounting table input,
+.accounting table select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.accounting .table-wrap {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #eef3f7;
+  box-shadow: 0 8px 20px rgba(16,24,40,0.04);
+}
+
+.accounting table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.accounting thead th {
+  text-align: left;
+  font-size: 12px;
+  color: #6b7280;
+  padding: 12px;
+  border-bottom: 2px solid #f1f5f9;
+  font-weight: 600;
+  background: #fdfdfd;
+}
+
+.accounting tbody td {
+  padding: 14px 12px;
+  vertical-align: middle;
+  font-size: 14px;
+  color: #111827;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.accounting tbody tr:hover {
+  background: linear-gradient(90deg, rgba(245,247,250,0.6), rgba(255,255,255,0));
+}
+
+.add-btn {
+  background: #2563eb;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.add-btn:hover { background: #1e4fd8; }
+
+.txn-amount {
+  font-weight: 600;
+}
+
+.bill-uploaded {
+  color: #3B6D11;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.accounting .bill-missing {
+  color: #6b7280;
+}
+.accounting .edit-row input[type="file"] {
+  width: 100%;
+}
+
+.upload-btn {
+  font-size: 12px;
+  padding: 8px 12px;
+  border: 1px dashed #d8d8d5;
+  border-radius: 999px;
+  background: #f9fafb;
+  cursor: pointer;
+  color: #4b5563;
+  transition: all 0.15s ease;
+}
+
+.upload-btn {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #111827;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.upload-btn:hover {
+  border-color: #9ca3af;
+  color: #111827;
+  background: #fff7e6;
+}
+
+.view-bill-btn,
+.edit-btn,
+.delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease, color 140ms ease;
+  cursor: pointer;
+}
+
+.view-bill-btn {
+  background: rgba(255, 190, 0, 0.12);
+  color: #b45309;
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.view-bill-btn:hover {
+  background: rgba(255, 203, 67, 0.18);
+  transform: translateY(-1px);
+}
+
+.edit-btn {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.edit-btn:hover {
+  background: rgba(96, 165, 250, 0.18);
+  transform: translateY(-1px);
+}
+
+.delete-btn {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.delete-btn:hover {
+  background: rgba(251, 113, 133, 0.18);
+  transform: translateY(-1px);
+}
+
+/* Status badges */
+.status-badge {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.s-paid {
+  background: #EAF3DE;
+  color: #3B6D11;
+}
+
+.s-pending {
+  background: #FAEEDA;
+  color: #633806;
+}
+
+.s-due {
+  background: #FCEBEB;
+  color: #791F1F;
+}
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  .form-row { grid-template-columns: 1fr; }
+  .acct-summary { grid-template-columns: 1fr; }
+  .image-view-modal img { max-width: 90vw; max-height: 60vh; }
+}
+
+/* Image view modal */
+.image-view-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+}
+
+.image-view-modal {
+  background: #fff;
+  border-radius: 8px;
+  max-width: 90vw;
+  max-height: 90vh;
+  padding: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-view-modal img {
+  max-width: calc(90vw - 40px);
+  max-height: calc(90vh - 40px);
+  object-fit: contain;
+  display: block;
+}
+
+.image-view-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: #222;
+}
+
+.image-view-close:hover { color: #000; }
+
+/* Accounting details modal overlay */
+.acct-details-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.acct-details-modal {
+  background: #fff;
+  border-radius: 16px;
+  max-width: 480px;
+  width: 90%;
+  padding: 28px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: scaleIn 0.2s ease-out;
+}
+
+.acct-details-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f3f4f6;
+  border: none;
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #4b5563;
+  transition: all 0.15s ease;
+}
+
+.acct-details-close:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

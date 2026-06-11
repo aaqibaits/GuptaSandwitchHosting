@@ -1,0 +1,45 @@
+.topbar {
+  background: #fff;
+  border-bottom: 0.5px solid #e5e5e3;
+  padding: 0 20px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.topbar-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1c1c1a;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-select {
+  font-size: 12px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 0.5px solid #d8d8d5;
+  background: #f4f4f2;
+  color: #1c1c1a;
+  cursor: pointer;
+}
+
+.topbar-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f5c842;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1208;
+}

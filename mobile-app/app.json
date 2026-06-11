@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Gupta Sandwich Admin",
+    "slug": "gupta-sandwich-admin",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A1208"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.guptasandwich.admin"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#1A1208"
+      },
+      "package": "com.guptasandwich.admin"
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
+    },
+    "plugins": []
+  }
+}

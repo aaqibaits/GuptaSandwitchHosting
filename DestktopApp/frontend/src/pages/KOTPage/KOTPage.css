@@ -1,0 +1,331 @@
+/* pages/KOTPage.css */
+.kot-page {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.kot-toolbar {
+  padding: 14px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.kot-toolbar h2 {
+  font-size: 16px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.kot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-auto-rows: auto;
+  gap: 14px;
+  padding: 18px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+  align-items: start;
+}
+
+.kot-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+
+.kot-state-error {
+  color: var(--red);
+}
+
+.kot-refresh-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.kot-card {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  min-height: 220px;
+  background: var(--surface);
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  padding: 0;
+  overflow: hidden;
+}
+
+.kot-card.urgent {
+  border-color: var(--red);
+}
+
+.kot-card.ready {
+  border-color: var(--green);
+}
+
+.kot-head {
+  padding: 10px 14px;
+  background: var(--bg);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.kot-head-left {
+  text-align: left;
+  min-width: 0;
+}
+
+.kot-head-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.kot-table {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.kot-time {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kot-time.urgent {
+  color: var(--red);
+}
+
+.status-badge {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-weight: 700;
+}
+
+.ready-badge {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.urgent-badge {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.kot-items {
+  padding: 10px 14px;
+}
+
+.kot-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--bg);
+  font-size: 13px;
+}
+
+.kot-item:last-child {
+  border-bottom: none;
+}
+
+.kot-qty {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--orange);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.kot-iname {
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+}
+
+.kot-iname.item-done {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.status-badge.status-pending,
+.status-badge.status-preparing {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-badge.status-ready {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-badge.status-dispatched {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.kot-actions {
+  padding: 8px 14px;
+  display: flex;
+  gap: 6px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.btn-ready {
+  flex: 1;
+  padding: 7px;
+  border: none;
+  border-radius: 7px;
+  background: var(--green);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-ready:hover {
+  background: #16A34A;
+}
+
+.btn-ready.dispatch {
+  background: var(--blue);
+}
+
+.btn-ready.dispatch:hover {
+  background: #1D4ED8;
+}
+
+.btn-cancel-kot {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-cancel-kot:hover {
+  background: var(--bg);
+}
+/* Add these styles to KOTPage.css */
+
+/* Checkbox styling */
+.item-ready-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--green);
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.item-ready-checkbox:hover {
+  transform: scale(1.05);
+}
+
+/* Dispatch individual item button */
+.dispatch-item-btn {
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.dispatch-item-btn:hover {
+  background: #1D4ED8;
+  transform: scale(1.02);
+}
+
+.dispatch-item-btn i {
+  font-size: 10px;
+}
+
+/* Progress indicator */
+.ready-progress {
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+/* Updated kot-item layout to accommodate checkbox */
+.kot-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bg);
+  font-size: 13px;
+}
+
+.kot-item:last-child {
+  border-bottom: none;
+}
+
+/* Dispatch ready button */
+.btn-ready.dispatch-ready {
+  background: var(--orange);
+  color: white;
+}
+
+.btn-ready.dispatch-ready:hover {
+  background: #EA580C;
+}
+
+/* KOT card with ready progress bar animation */
+.kot-card {
+  transition: all 0.2s ease;
+}
+
+.kot-card.ready {
+  border-color: var(--green);
+  background: linear-gradient(135deg, var(--surface) 0%, #f0fdf4 100%);
+}
+
+/* Add icon styles if using tabler icons, otherwise use emoji fallback */
+.ti {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Make sure checkboxes are visible */
+.item-ready-checkbox:checked {
+  background-color: var(--green);
+  border-color: var(--green);
+}
