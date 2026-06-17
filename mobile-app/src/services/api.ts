@@ -15,7 +15,7 @@
 // Android emulator → http://10.0.2.2:5000
 // iOS simulator    → http://localhost:5000
 // Physical device  → http://<YOUR_LAN_IP>:5000
-export const BASE_URL = 'http://10.211.63.19:5000';
+export const BASE_URL = 'https://guptasandwich.work-desk.tech';
 
 // ── Token store ───────────────────────────────────────────────────────────────
 let _token: string | null = null;

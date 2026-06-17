@@ -422,7 +422,7 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
               {/* Dish image */}
               {d.image_url && (
                 <img
-                  src={`http://localhost:5000${d.image_url}`}
+                  src={`${d.image_url}`}
                   alt={d.name}
                   style={{
                     width: "100%", height: 120,

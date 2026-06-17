@@ -55,7 +55,7 @@ const KOTPage = ({ showToast, isActive, onStatsRefresh }) => {
       const socketUrl = (
         import.meta.env.VITE_API_URL ||
         import.meta.env.REACT_APP_API_URL ||
-        'http://localhost:5000/api'
+        '/api'
       ).replace('/api', '');
 
       const outletId = sessionStorage.getItem('gs_outlet_id') || 1;
