@@ -9,7 +9,7 @@ const VALID_KOT_STATUSES_DB = ['pending', 'preparing', 'ready', 'served', 'cance
 
 const RATES = {
   dine: { serviceChargeRate: 0.1, gstRate: 0.05, packingCharge: 0, deliveryCharge: 0 },
-  parcel: { serviceChargeRate: 0, gstRate: 0.18, packingCharge: 20, deliveryCharge: 30 }
+  parcel: { serviceChargeRate: 0, gstRate: 0.05, packingCharge: 20, deliveryCharge: 30 }
 };
 
 const kotStatusToDb = (status) => (status === 'dispatched' ? 'served' : status);
@@ -101,7 +101,7 @@ const calculateOrderTotals = (orderType, lineItems, discount = {}) => {
   }
 
   const afterDiscount = roundMoney(subtotal - discountAmount);
-  const totalAmount = afterDiscount;
+  const totalAmount = Math.round(afterDiscount);
 
   return {
     subtotal,
@@ -439,16 +439,7 @@ exports.createOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: calcError.message });
     }
 
-    if (req.body.expectedTotal != null) {
-      const expected = Number(req.body.expectedTotal);
-      if (Math.abs(expected - totals.totalAmount) > 0.02) {
-        return res.status(400).json({
-          success: false,
-          message: 'Order total mismatch. Please refresh and try again.',
-          calculatedTotal: totals.totalAmount
-        });
-      }
-    }
+
 
     await client.query('BEGIN');
     transactionStarted = true;
