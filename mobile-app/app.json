@@ -27,6 +27,12 @@
     "web": {
       "favicon": "./assets/icon.png"
     },
-    "plugins": []
+    "plugins": [],
+    "extra": {
+      "eas": {
+        "projectId": "07f8e994-30d1-4abe-9054-dc644dcfa4bf"
+      }
+    },
+    "owner": "aaqib_kosqu"
   }
 }
