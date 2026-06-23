@@ -34,13 +34,13 @@ const TopBar = ({
         <div className="outlet-sub">Dine-In · Takeaway · Delivery</div>
       </div>
       <div className="topbar-right">
-        <div className="stat-pill" title="Active orders">
+        {/* <div className="stat-pill" title="Active orders">
           <i className="ti ti-receipt" style={{ fontSize: '14px', color: 'var(--blue)' }}></i>
           <span className="val" style={{ color: 'var(--blue)' }}>
             {isLoadingStats ? '…' : openOrdersCount}
           </span>
           <span className="stat-label">open</span>
-        </div>
+        </div> */}
         {/* Table occupancy — disabled until table management is enabled
         <div className="stat-pill" title="Occupied tables">
           <i className="ti ti-clock" style={{ color: 'var(--orange)', fontSize: '14px' }}></i>
