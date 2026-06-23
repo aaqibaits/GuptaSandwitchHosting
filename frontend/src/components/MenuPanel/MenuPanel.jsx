@@ -25,7 +25,7 @@ const normalizeDish = (dish, orderType) => ({
 const getImageUrl = (url) => {
   if (!url) return null;
   if (url.startsWith('http')) return url;
-  const baseUrl = import.meta.env.REACT_APP_API_URL ? import.meta.env.REACT_APP_API_URL.replace('/api', '') : 'http://localhost:5000';
+  const baseUrl = import.meta.env.REACT_APP_API_URL ? import.meta.env.REACT_APP_API_URL.replace('/api', '') : '';
   return `${baseUrl}${url}`;
 };
 
