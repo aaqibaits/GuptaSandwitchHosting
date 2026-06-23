@@ -69,7 +69,7 @@ const findUserByUsername = async (username) => {
   const result = await pool.query(
     `SELECT u.id, u.uuid, u.outlet_id, u.name, u.email, u.username, u.password_hash,
             u.role_label, u.app_role, u.permissions, u.status,
-            o.name AS outlet_name
+            o.name AS outlet_name, o.address AS outlet_address, o.phone AS outlet_phone, o.image_url AS outlet_logo
      FROM users u
      LEFT JOIN outlets o ON o.id = u.outlet_id
      WHERE u.username = $1
@@ -85,7 +85,7 @@ const findUserByEmail = async (email) => {
   const result = await pool.query(
     `SELECT u.id, u.uuid, u.outlet_id, u.name, u.email, u.username, u.password_hash,
             u.role_label, u.app_role, u.permissions, u.status,
-            o.name AS outlet_name
+            o.name AS outlet_name, o.address AS outlet_address, o.phone AS outlet_phone, o.image_url AS outlet_logo
      FROM users u
      LEFT JOIN outlets o ON o.id = u.outlet_id
      WHERE u.email = $1
@@ -99,10 +99,12 @@ const findUserByEmail = async (email) => {
 // Find user by id
 const findUserById = async (id) => {
   const result = await pool.query(
-    `SELECT id, uuid, outlet_id, name, email, username,
-            role_label, app_role, permissions, status, created_at
-     FROM users
-     WHERE id = $1
+    `SELECT u.id, u.uuid, u.outlet_id, u.name, u.email, u.username,
+            u.role_label, u.app_role, u.permissions, u.status, u.created_at,
+            o.name AS outlet_name, o.address AS outlet_address, o.phone AS outlet_phone, o.image_url AS outlet_logo
+     FROM users u
+     LEFT JOIN outlets o ON o.id = u.outlet_id
+     WHERE u.id = $1
      LIMIT 1`,
     [id]
   );
