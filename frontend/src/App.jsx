@@ -32,14 +32,14 @@ const speakText = (text) => {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'hi-IN';
-    
+
     // Find a Hindi voice if available
     const voices = window.speechSynthesis.getVoices();
     const hindiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('HI'));
     if (hindiVoice) {
       utterance.voice = hindiVoice;
     }
-    
+
     window.speechSynthesis.speak(utterance);
   }
 };
@@ -131,7 +131,7 @@ function App() {
         currentUser.authType === 'admin' ||
         currentUser.role === 'ADMIN' ||
         currentUser.role === 'SUPER_ADMIN';
-      
+
       if (isAdmin) {
         setStaffActivePage('dashboard');
       } else if (currentUser.role_label === 'Kitchen Staff') {
@@ -142,7 +142,7 @@ function App() {
     }
   }, [currentUser]);
 
-  // Persist session across page refreshes
+  // Persist session across page refreshes and fetch fresh outlet details
   useEffect(() => {
     const savedToken =
       localStorage.getItem('token') ||
@@ -162,12 +162,39 @@ function App() {
         if (savedUser?.outlet_id) {
           sessionStorage.setItem('gs_outlet_id', String(savedUser.outlet_id));
         }
+
+        // Restore session immediately with cached user
         setCurrentUser({
           ...savedUser,
           token: savedToken,
           authType: savedAuthType || savedUser?.authType || null,
         });
         setIsLoggedIn(true);
+
+        // Fetch fresh profile details from the backend to ensure outlet address and phone are up to date
+        api.get('/auth/me')
+          .then((res) => {
+            if (res.data && res.data.success && res.data.user) {
+              const freshUser = res.data.user;
+              // Preserve token in the currentUser state
+              const updatedUser = {
+                ...freshUser,
+                token: savedToken,
+                authType: savedAuthType || freshUser.authType || null
+              };
+              setCurrentUser(updatedUser);
+
+              // Persist the fresh user details to the correct storage
+              if (localStorage.getItem('token') || localStorage.getItem('user')) {
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+              } else {
+                sessionStorage.setItem('user', JSON.stringify(updatedUser));
+              }
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to sync user profile:', err);
+          });
       } catch (error) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -264,10 +291,10 @@ function App() {
       swiggy: { pending: 0, preparing: 0, ready: 0, completed: 0, total: 0 },
       zomato: { pending: 0, preparing: 0, ready: 0, completed: 0, total: 0 }
     };
-    liveOrders.forEach(o => { 
+    liveOrders.forEach(o => {
       if (s[o.platform] && s[o.platform][o.status] !== undefined) {
-        s[o.platform][o.status]++; 
-        s[o.platform].total++; 
+        s[o.platform][o.status]++;
+        s[o.platform].total++;
       }
     });
     setLiveStats(s);
@@ -290,7 +317,7 @@ function App() {
       const socketUrl = (
         import.meta.env.VITE_API_URL ||
         import.meta.env.REACT_APP_API_URL ||
-        '/api'
+        'http://localhost:5000/api'
       ).replace('/api', '');
 
       let outletId = currentUser.outlet_id || sessionStorage.getItem('gs_outlet_id') || 1;
@@ -322,7 +349,7 @@ function App() {
         if (soundEnabledRef.current) {
           const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
           audio.volume = 0.3;
-          audio.play().catch(() => {});
+          audio.play().catch(() => { });
           speakText('Nayi order prapt hui hai. New order received.');
         }
 
@@ -385,10 +412,10 @@ function App() {
               };
             }
             // Mapping database status to live order status
-            const nextStatus = data.status === 'ready' 
-              ? 'ready' 
+            const nextStatus = data.status === 'ready'
+              ? 'ready'
               : (data.status === 'served' || data.status === 'dispatched' ? 'completed' : (data.status === 'cancelled' ? 'cancelled' : order.status));
-            
+
             return {
               ...order,
               status: nextStatus
@@ -426,7 +453,7 @@ function App() {
         ? Math.round((subtotal * discount.value / 100) * 100) / 100
         : Math.min(discount.value, subtotal);
     }
-    return Math.round((subtotal - discountAmount) * 100) / 100;
+    return Math.round(subtotal - discountAmount);
   };
 
   const handlePaymentComplete = async (method) => {
@@ -436,6 +463,7 @@ function App() {
     }
     setIsSubmitting(true);
     try {
+      const calculatedExpectedTotal = getTotalForOrder();
       const payload = {
         outletId: Number(currentUser?.outlet_id || sessionStorage.getItem('gs_outlet_id')),
         orderType,
@@ -449,14 +477,50 @@ function App() {
           type: discount.type === 'pct' ? 'percentage' : 'fixed',
           value: Number(discount.value)
         },
-        expectedTotal: Number(getTotalForOrder())
+        expectedTotal: Number(calculatedExpectedTotal)
       };
 
-      await createOrder(payload);
+      const response = await createOrder(payload);
+      const createdOrder = response.order || response;
+
+      const subtotal = currentOrder.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      let discountAmount = 0;
+      if (discount.value > 0) {
+        discountAmount = discount.type === 'pct'
+          ? Math.round((subtotal * discount.value / 100) * 100) / 100
+          : Math.min(discount.value, subtotal);
+      }
+      const roundedTotal = Math.round(subtotal - discountAmount);
+
+      const receipt = {
+        orderNumber: createdOrder.orderNumber || createdOrder.order_number,
+        date: createdOrder.orderTime || createdOrder.order_time || new Date(),
+        customer: createdOrder.customerName || 'Bulk / Catering Order',
+        cashier: currentUser?.name || 'Ramesh G.',
+        roleLabel: currentUser?.role_label || 'Cashier',
+        outletName: currentUser?.outlet_name || 'Gupta Sandwich',
+        outletAddress: currentUser?.outlet_address || '',
+        outletPhone: currentUser?.outlet_phone || '',
+        orderTypeLabel: orderType === 'parcel' ? 'Parcel' : 'Dine-in',
+        items: currentOrder.map(item => ({
+          name: item.name,
+          qty: item.qty,
+          price: item.price,
+          emoji: item.emoji
+        })),
+        subtotal: subtotal,
+        discountAmount: discountAmount,
+        total: roundedTotal,
+        method: method,
+        transactionRef: createdOrder.uuid ? createdOrder.uuid.split('-')[0].toUpperCase() : 'NEFT202606080848',
+        bank: 'State Bank of India',
+      };
+
+      setReceiptData(receipt);
       setPaymentModalOpen(false);
       setCurrentOrder([]);
       setDiscount({ value: 0, type: 'pct' });
-      showToast('✅ Order placed & sent to kitchen!');
+      showToast('✅ Order placed & receipt generated!');
       loadStats();
     } catch (err) {
       console.error(err);
@@ -468,7 +532,6 @@ function App() {
 
   const closeReceipt = () => {
     setReceiptData(null);
-    showToast('🖨️ Receipt printed!');
   };
 
   // ── Show Login if not authenticated ────────────────────────────────────
@@ -606,7 +669,7 @@ function App() {
         orderItems={currentOrder}
       />
 
-      {/* {receiptData && <ReceiptModal data={receiptData} onClose={closeReceipt} />} */}
+      {receiptData && <ReceiptModal data={receiptData} onClose={closeReceipt} />}
 
       <Toast message={toastMessage} />
     </div>

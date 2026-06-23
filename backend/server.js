@@ -17,8 +17,10 @@ const outletReportsRoutes = require('./routes/OutletReportsControllers/outletRep
 const integrationRoutes = require('./routes/integrationControllers/integrationRoutes');
 const auditLogsRoutes = require('./routes/auditLogsController/auditLogsRoutes');
 // ✅ ADDED: Accounting routes — was missing entirely, which is why /api/accounting returned 404
-const accountingRoutes = require('./routes/accountingControllers/accountingRoutes');
+const accountingRoutes = require('./routes/accountingControllers/AccountingRoutes');
 const staffAccountingRoutes = require('./routes/staffAccountingControllers/staffAccountingRoutes');
+const printRoutes = require('./routes/printController/printRoutes');
+
 
 // Load environment variables
 dotenv.config();
@@ -95,8 +97,8 @@ const limiter = rateLimit({
 app.use("/api", limiter);
 
 // ── Body Parsers ────────────────────────────────────────
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // ── Serve Uploaded Images ───────────────────────────────
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -113,6 +115,8 @@ app.use('/api/audit-logs', auditLogsRoutes);
 // ✅ ADDED: Register accounting routes at /api/accounting
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/staff-accounting', staffAccountingRoutes);
+app.use('/api/print', printRoutes);
+
 
 // ── Health Check & Root Endpoints ───────────────────────
 app.get("/", (req, res) => res.json({ status: "✅ Gupta Sandwich API running" }));
