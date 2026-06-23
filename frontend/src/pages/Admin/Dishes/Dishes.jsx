@@ -420,52 +420,51 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
             <div key={d.id} className="dish-card">
 
               {/* Dish image */}
-              {d.image_url && (
-                <img
-                  src={`${d.image_url}`}
-                  alt={d.name}
-                  style={{
-                    width: "100%", height: 120,
-                    objectFit: "cover", borderRadius: 8, marginBottom: 8,
-                  }}
-                />
-              )}
-
-              <div className="dish-name">{d.name}</div>
-              <div className="dish-cat">{d.cat}</div>
-
-              {tab === "offline" ? (
-                <div className="price-row">
-                  <span className="ptag">Dine-in ₹{d.dine}</span>
-                  <span className="ptag">Parcel ₹{d.parcel}</span>
-                </div>
-              ) : (
-                <div className="price-row">
-                  <span className="ptag ptag--swiggy">Swiggy ₹{d.swiggy}</span>
-                  <span className="ptag ptag--zomato">Zomato ₹{d.zomato}</span>
-                </div>
-              )}
-
-              <div className="dish-ingredients">
-                {Array.isArray(d.ingredients) ? d.ingredients.join(", ") : d.ingredients}
+              <div className="dish-card__img-wrap">
+                {d.image_url
+                  ? <img src={`http://localhost:5000${d.image_url}`} alt={d.name} />
+                  : <div className="dish-card__img-placeholder">🍽️</div>
+                }
               </div>
 
-              <div className="outlet-chips">
-                {(Array.isArray(d.outlets) ? d.outlets : [d.outlets]).map((o) => (
-                  <span key={o} className="chip">{o}</span>
-                ))}
-              </div>
+              {/* Dish body */}
+              <div className="dish-card__body">
+                <div className="dish-name">{d.name}</div>
+                <div className="dish-cat">{d.cat}</div>
 
-              <div className="dish-actions">
-                <button className="icon-btn" onClick={() => handleEditOpen(d)}>
-                  <i className="ti ti-edit" />
-                </button>
-                <button
-                  className="icon-btn icon-btn--danger"
-                  onClick={() => requestDelete(d)}
-                >
-                  <i className="ti ti-trash" />
-                </button>
+                {tab === "offline" ? (
+                  <div className="price-row">
+                    <span className="ptag">Dine-in ₹{d.dine}</span>
+                    <span className="ptag">Parcel ₹{d.parcel}</span>
+                  </div>
+                ) : (
+                  <div className="price-row">
+                    <span className="ptag ptag--swiggy">Swiggy ₹{d.swiggy}</span>
+                    <span className="ptag ptag--zomato">Zomato ₹{d.zomato}</span>
+                  </div>
+                )}
+
+                <div className="dish-ingredients">
+                  {Array.isArray(d.ingredients) ? d.ingredients.join(", ") : d.ingredients}
+                </div>
+
+                <div className="outlet-chips">
+                  {(Array.isArray(d.outlets) ? d.outlets : [d.outlets]).map((o) => (
+                    <span key={o} className="chip">{o}</span>
+                  ))}
+                </div>
+
+                <div className="dish-actions">
+                  <button className="icon-btn" onClick={() => handleEditOpen(d)}>
+                    <i className="ti ti-edit" />
+                  </button>
+                  <button
+                    className="icon-btn icon-btn--danger"
+                    onClick={() => requestDelete(d)}
+                  >
+                    <i className="ti ti-trash" />
+                  </button>
+                </div>
               </div>
 
             </div>

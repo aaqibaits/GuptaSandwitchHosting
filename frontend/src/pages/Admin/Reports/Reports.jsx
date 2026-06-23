@@ -900,7 +900,7 @@ export default function Reports({ selectedOutlet = "All Outlets" }) {
     return (
       <div className="report-table-wrapper">
         <div className="section-title">
-          <i className="ti ti-percentage"></i> GST Report (18% - CGST 9% + SGST 9%)
+          <i className="ti ti-percentage"></i> GST Report (5% - CGST 2.5% + SGST 2.5%)
         </div>
         <div className="gst-summary">
           <div className="gst-card">
@@ -908,11 +908,11 @@ export default function Reports({ selectedOutlet = "All Outlets" }) {
             <strong>₹{taxableValue.toLocaleString()}</strong>
           </div>
           <div className="gst-card">
-            <span>CGST (9%)</span>
+            <span>CGST (2.5%)</span>
             <strong>₹{cgst.toLocaleString()}</strong>
           </div>
           <div className="gst-card">
-            <span>SGST (9%)</span>
+            <span>SGST (2.5%)</span>
             <strong>₹{sgst.toLocaleString()}</strong>
           </div>
           <div className="gst-card total">

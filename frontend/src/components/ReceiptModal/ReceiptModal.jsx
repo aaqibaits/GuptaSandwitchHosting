@@ -97,7 +97,7 @@ const ReceiptModal = ({ data, onClose }) => {
       }
 
       // Send to backend for silent OS-level printing
-      const response = await fetch('http://localhost:5002/api/print/receipt', {
+      const response = await fetch('http://localhost:5000/api/print/receipt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
