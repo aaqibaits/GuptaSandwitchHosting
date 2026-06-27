@@ -17,7 +17,7 @@ const outletReportsRoutes = require('./routes/OutletReportsControllers/outletRep
 const integrationRoutes = require('./routes/integrationControllers/integrationRoutes');
 const auditLogsRoutes = require('./routes/auditLogsController/auditLogsRoutes');
 // ✅ ADDED: Accounting routes — was missing entirely, which is why /api/accounting returned 404
-const accountingRoutes = require('./routes/accountingControllers/AccountingRoutes');
+const accountingRoutes = require('./routes/accountingControllers/accountingRoutes');
 const staffAccountingRoutes = require('./routes/staffAccountingControllers/staffAccountingRoutes');
 const printRoutes = require('./routes/printController/printRoutes');
 
@@ -26,6 +26,7 @@ const printRoutes = require('./routes/printController/printRoutes');
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', true);
 const server = http.createServer(app);
 
 const corsOriginEnv = process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:3000';

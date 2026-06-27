@@ -1,6 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import html2canvas from 'html2canvas';
 import './ReceiptModal.css';
+import {
+  requestUSBPrinter,
+  getSavedUSBPrinters,
+  formatCanvasToESCPOS,
+  sendBytesToUSBPrinter
+} from '../../utils/webusbPrinter';
 
 const numberToWords = (num) => {
   const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
@@ -48,100 +54,173 @@ const ReceiptModal = ({ data, onClose }) => {
     method = 'Cash'
   } = data;
 
+  const [needsPairing, setNeedsPairing] = useState(false);
+  const [printImages, setPrintImages] = useState({ receiptImage: null, kotImage: null });
+
+  const printReceiptAndKOT = async (printerDevice) => {
+    const receiptElement = document.getElementById('receipt-card-container');
+    const kotElement = document.getElementById('kot-card-container');
+
+    if (receiptElement) {
+      console.log('Generating ESC/POS canvas for receipt...');
+      const canvas1 = await html2canvas(receiptElement, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        width: 280,
+        height: receiptElement.scrollHeight,
+        windowWidth: 280,
+        onclone: (document) => {
+          const element = document.getElementById('receipt-card-container');
+          if (element) {
+            element.style.height = 'auto';
+            element.style.overflow = 'visible';
+            element.style.width = '280px';
+          }
+        }
+      });
+      const receiptBytes = formatCanvasToESCPOS(canvas1);
+      console.log('Sending receipt graphics to USB printer...');
+      await sendBytesToUSBPrinter(printerDevice, receiptBytes);
+    }
+
+    if (kotElement) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      console.log('Generating ESC/POS canvas for KOT...');
+      const canvas2 = await html2canvas(kotElement, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        width: 280,
+        height: kotElement.scrollHeight,
+        windowWidth: 280,
+        onclone: (document) => {
+          const element = document.getElementById('kot-card-container');
+          if (element) {
+            element.style.height = 'auto';
+            element.style.overflow = 'visible';
+            element.style.width = '280px';
+          }
+        }
+      });
+      const kotBytes = formatCanvasToESCPOS(canvas2);
+      console.log('Sending KOT graphics to USB printer...');
+      await sendBytesToUSBPrinter(printerDevice, kotBytes);
+    }
+  };
+
   const handleSilentPrint = async () => {
     const receiptElement = document.getElementById('receipt-card-container');
     const kotElement = document.getElementById('kot-card-container');
 
-    try {
-      let receiptImage = null;
-      let kotImage = null;
+    let receiptImg = null;
+    let kotImg = null;
 
+    try {
       if (receiptElement) {
         const canvas1 = await html2canvas(receiptElement, {
           backgroundColor: '#ffffff',
-          scale: 3,
+          scale: 2,
           useCORS: true,
           logging: false,
-          width: 140,
+          width: 280,
           height: receiptElement.scrollHeight,
-          windowWidth: 140,
+          windowWidth: 280,
           onclone: (document) => {
             const element = document.getElementById('receipt-card-container');
             if (element) {
               element.style.height = 'auto';
               element.style.overflow = 'visible';
+              element.style.width = '280px';
             }
           }
         });
-        receiptImage = canvas1.toDataURL('image/png');
+        receiptImg = canvas1.toDataURL('image/png');
       }
 
       if (kotElement) {
         const canvas2 = await html2canvas(kotElement, {
           backgroundColor: '#ffffff',
-          scale: 3,
+          scale: 2,
           useCORS: true,
           logging: false,
-          width: 140,
+          width: 280,
           height: kotElement.scrollHeight,
-          windowWidth: 140,
+          windowWidth: 280,
           onclone: (document) => {
             const element = document.getElementById('kot-card-container');
             if (element) {
               element.style.height = 'auto';
               element.style.overflow = 'visible';
+              element.style.width = '280px';
             }
           }
         });
-        kotImage = canvas2.toDataURL('image/png');
+        kotImg = canvas2.toDataURL('image/png');
       }
 
+      setPrintImages({ receiptImage: receiptImg, kotImage: kotImg });
+
+      if (navigator.usb) {
+        console.log('WebUSB supported. Checking for saved printers...');
+        const devices = await getSavedUSBPrinters();
+        if (devices && devices.length > 0) {
+          const printerDevice = devices[0];
+          console.log('Found saved printer:', printerDevice.productName);
+
+          await printReceiptAndKOT(printerDevice);
+          onClose();
+          return;
+        } else {
+          console.log('No saved printers found. Prompting for pairing.');
+          setNeedsPairing(true);
+        }
+      } else {
+        console.warn('WebUSB not supported, falling back to server print/download.');
+        await handleFallbackPrint(receiptImg, kotImg);
+      }
+    } catch (e) {
+      console.error('Error in print flow:', e);
+      setNeedsPairing(true);
+    }
+  };
+
+  const handleManualPairAndPrint = async () => {
+    try {
+      const printerDevice = await requestUSBPrinter();
+      if (printerDevice) {
+        console.log('Printer paired successfully:', printerDevice.productName);
+        await printReceiptAndKOT(printerDevice);
+        onClose();
+      }
+    } catch (err) {
+      alert(`USB Pairing/Printing failed: ${err.message}`);
+    }
+  };
+
+  const handleFallbackPrint = async (receiptImg = null, kotImg = null) => {
+    const finalReceiptImage = receiptImg || printImages.receiptImage;
+    const finalKotImage = kotImg || printImages.kotImage;
+
+    try {
       // Send to backend for silent OS-level printing
-      const response = await fetch('http://localhost:5002/api/print/receipt', {
+      const printUrl = 'https://guptasandwich.work-desk.tech/api/print/receipt';
+      const response = await fetch(printUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ receiptImage, kotImage })
+        body: JSON.stringify({ receiptImage: finalReceiptImage, kotImage: finalKotImage })
       });
 
       if (!response.ok) {
-        let errorMessage = 'Unknown error';
-        try {
-          const errData = await response.json();
-          errorMessage = errData.error || errData.message;
-        } catch (err) {
-          errorMessage = await response.text();
-        }
-        console.error('Failed to print from backend', errorMessage);
-        alert(`Direct printing failed. Is your printer connected and set as default?\n\nError: ${errorMessage}\n\nFalling back to download.`);
-        fallbackDownload(receiptImage, kotImage);
+        fallbackDownload(finalReceiptImage, finalKotImage);
       }
     } catch (e) {
-      console.error('Error generating or sending print image:', e);
-      alert(`Print request failed. Check network connection. Falling back to download.`);
-      // Fallback to download
-      try {
-        const receiptElement = document.getElementById('receipt-card-container');
-        if (receiptElement) {
-          const canvas = await html2canvas(receiptElement, {
-            backgroundColor: '#ffffff',
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            width: 140,
-            height: receiptElement.scrollHeight,
-            windowWidth: 140
-          });
-          const receiptImage = canvas.toDataURL('image/png');
-          const link1 = document.createElement('a');
-          link1.download = `Receipt_${orderNumber || 'invoice'}.png`;
-          link1.href = receiptImage;
-          link1.click();
-        }
-      } catch (err) {
-        console.error('Fallback download failed:', err);
-      }
+      console.error('Hosted print request failed, downloading receipt locally:', e);
+      fallbackDownload(finalReceiptImage, finalKotImage);
     } finally {
       onClose();
     }
@@ -173,7 +252,88 @@ const ReceiptModal = ({ data, onClose }) => {
   }, []);
 
   return (
-    <div className="receipt-overlay">
+    <>
+      {needsPairing && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          pointerEvents: 'auto',
+          fontFamily: 'system-ui, sans-serif'
+        }}>
+          <div style={{
+            backgroundColor: '#1a1d24',
+            color: '#fff',
+            padding: '24px',
+            borderRadius: '12px',
+            width: '380px',
+            textAlign: 'center',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+            border: '1px solid #2d3139'
+          }}>
+            <h2 style={{ margin: '0 0 12px 0', fontSize: '20px', color: '#4facfe' }}>🔌 USB Receipt Printer</h2>
+            <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#a0aec0', lineHeight: 1.5 }}>
+              No paired USB thermal printer detected. Please connect your printer via USB and pair it below.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button 
+                onClick={handleManualPairAndPrint}
+                style={{
+                  backgroundColor: '#4facfe',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'background 0.2s'
+                }}
+              >
+                Pair & Print Receipt
+              </button>
+              <button 
+                onClick={() => handleFallbackPrint(null, null)}
+                style={{
+                  backgroundColor: '#2d3139',
+                  color: '#e2e8f0',
+                  border: '1px solid #4a5568',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Skip & Download Receipt
+              </button>
+              <button 
+                onClick={onClose}
+                style={{
+                  backgroundColor: 'transparent',
+                  color: '#a0aec0',
+                  border: 'none',
+                  padding: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  textDecoration: 'underline'
+                }}
+              >
+                Cancel / Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="receipt-overlay">
       <div className="receipt-modal-wrapper">
         {/* Printable/Downloadable Receipt Card */}
         <div id="receipt-card-container" className="receipt-card">
@@ -314,6 +474,7 @@ const ReceiptModal = ({ data, onClose }) => {
         </div>
       </div>
     </div>
+  </>
   );
 };
 

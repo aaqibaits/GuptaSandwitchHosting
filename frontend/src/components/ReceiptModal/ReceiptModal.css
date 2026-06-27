@@ -1,9 +1,9 @@
-/* Receipt Modal Overlay - Hidden Off-Screen for Auto Download/Capture */
+/* Receipt Modal Overlay - Hidden Off-Screen for Auto Capture */
 .receipt-overlay {
   position: fixed;
   left: -9999px;
   top: -9999px;
-  width: 210px;
+  width: 300px;
   height: auto;
   opacity: 0.01;
   pointer-events: none;
@@ -18,7 +18,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
 }
 
 /* Receipt Content Wrapper */
@@ -29,17 +29,17 @@
   overflow: visible;
 }
 
-/* Receipt Card Layout - 35mm width */
+/* Receipt Card Layout - Styled for 280px width */
 .receipt-card {
   background-color: #ffffff;
-  padding: 10px;
-  border: 0.5px solid #e0e0e0;
+  padding: 8px;
+  border: 1px solid #000000;
   font-family: 'Arial', 'Helvetica', sans-serif;
-  color: #111111;
-  font-size: 6px;
-  line-height: 1.3;
+  color: #000000;
+  font-size: 11px;
+  line-height: 1.4;
   box-sizing: border-box;
-  width: 140px;
+  width: 280px;
   margin: 0 auto;
   page-break-inside: avoid;
   break-inside: avoid;
@@ -49,17 +49,19 @@
 /* Header Block */
 .receipt-dark-header {
   background-color: #ffffff;
-  color: #111111;
-  padding: 5px 0 8px 0;
-  margin-bottom: 5px;
-  border-bottom: 1px dashed #111111;
+  color: #000000;
+  padding: 5px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed #000000;
+  text-align: center;
 }
 
 .header-top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  margin-bottom: 5px;
 }
 
 .header-left {
@@ -67,8 +69,8 @@
 }
 
 .receipt-logo {
-  max-height: 28px;
-  max-width: 45px;
+  max-height: 48px;
+  max-width: 80px;
   object-fit: contain;
   background-color: transparent;
 }
@@ -80,50 +82,41 @@
 
 .receipt-outlet-name {
   font-family: 'Arial', 'Helvetica', sans-serif;
-  font-size: 6px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: bold;
   margin: 0 0 2px 0;
-  color: #111111;
-  letter-spacing: 0.2px;
+  color: #000000;
+  text-transform: uppercase;
 }
 
 .receipt-header-detail {
-  font-size: 5px;
+  font-size: 10px;
   margin: 1px 0;
-  opacity: 0.9;
-  letter-spacing: 0.1px;
-  line-height: 1.2;
-  font-family: 'Arial', 'Helvetica', sans-serif;
+  line-height: 1.3;
 }
 
 .receipt-slogan {
-  font-size: 6.5px;
+  font-size: 10px;
   font-style: italic;
   text-align: center;
-  margin-top: 4px;
-  opacity: 0.8;
-  letter-spacing: 0.2px;
-  font-family: 'Arial', 'Helvetica', sans-serif;
+  margin-top: 5px;
 }
 
 /* Metadata Grid Section */
 .receipt-meta-grid {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 5px;
-  line-height: 1.4;
-  padding: 0 1px;
+  margin-bottom: 8px;
+  padding: 0 2px;
 }
 
 .meta-col p {
-  margin: 1px 0;
-  font-size: 4px;
-  font-family: 'Arial', 'Helvetica', sans-serif;
+  margin: 2px 0;
+  font-size: 10px;
 }
 
 .meta-col span {
   font-weight: bold;
-  font-family: 'Arial', 'Helvetica', sans-serif;
 }
 
 .text-right {
@@ -133,43 +126,36 @@
 /* Sales Ledger Title */
 .ledger-title-band {
   font-weight: bold;
-  font-size: 4px;
-  margin-top: 4px;
-  margin-bottom: 4px;
-  letter-spacing: 0.2px;
+  font-size: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  letter-spacing: 0.5px;
   text-align: center;
-  padding: 2px 0;
-  border-bottom: 0.5px solid #e0e0e0;
-  font-family: 'Arial', 'Helvetica', sans-serif;
+  padding: 3px 0;
+  border-top: 1px dashed #000000;
+  border-bottom: 1px dashed #000000;
+  text-transform: uppercase;
 }
 
 /* Items Table */
 .receipt-items-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 5px;
-  font-size: 4px;
-  table-layout: fixed;
-  word-wrap: break-word;
+  margin-bottom: 8px;
+  font-size: 11px;
 }
 
 .receipt-items-table th {
-  border-bottom: 1px solid #111111;
-  padding: 2px 1px;
+  border-bottom: 1px solid #000000;
+  padding: 4px 2px;
   font-weight: bold;
   text-align: left;
-  font-size: 4px;
-  font-family: 'Arial', 'Helvetica', sans-serif;
 }
 
 .receipt-items-table td {
-  border-bottom: 1px solid #e0e0e0;
-  padding: 2.5px 1px;
+  border-bottom: 1px dashed #e0e0e0;
+  padding: 5px 2px;
   vertical-align: middle;
-  font-size: 4px;
-  font-family: 'Arial', 'Helvetica', sans-serif;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
 }
 
 .receipt-items-table th.text-right,
@@ -179,111 +165,51 @@
 
 .receipt-items-table th:first-child,
 .receipt-items-table td:first-child {
-  padding-left: 1px;
-  width: 42%;
+  padding-left: 2px;
+  width: 50%;
 }
 
 .receipt-items-table th:last-child,
 .receipt-items-table td:last-child {
-  padding-right: 1px;
+  padding-right: 2px;
 }
 
 /* Grand Total Band */
 .receipt-total-band {
   background-color: #ffffff;
-  color: #111111;
-  padding: 4px 0;
+  color: #000000;
+  padding: 6px 2px;
   display: flex;
   justify-content: space-between;
   font-weight: bold;
-  font-size: 5px;
-  margin-bottom: 3px;
-  border-top: 0.5px solid #111111;
-  border-bottom: 0.5px solid #111111;
-  font-family: 'Arial', 'Helvetica', sans-serif;
-}
-
-.amount-in-words {
-  font-style: italic;
-  font-size: 4px;
-  color: #555555;
+  font-size: 13px;
   margin-bottom: 5px;
-  border-bottom: 1px solid #eeeeee;
-  padding-bottom: 5px;
-  font-family: 'Arial', 'Helvetica', sans-serif;
-}
-
-/* Payment Details Block */
-.payment-details-block {
-  margin-bottom: 7px;
-}
-
-.payment-details-block h3 {
-  font-size: 4px;
-  font-weight: bold;
-  margin: 0 0 2px 0;
-  letter-spacing: 0.2px;
-  font-family: 'Arial', 'Helvetica', sans-serif;
-}
-
-.pay-detail-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 4px;
-  padding: 1px 0;
-  font-family: 'Arial', 'Helvetica', sans-serif;
+  border-top: 1.5px solid #000000;
+  border-bottom: 1.5px solid #000000;
 }
 
 /* Stamp and Footer */
 .stamp-footer-container {
-  margin-top: 5px;
+  margin-top: 8px;
   text-align: center;
-}
-
-.paid-stamp-box {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin-bottom: 5px;
-}
-
-.paid-stamp {
-  border: 1px solid #2e7d32;
-  color: #2e7d32;
-  font-size: 4px;
-  font-weight: bold;
-  padding: 2px 12px;
-  border-radius: 2px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  font-family: 'Arial', 'Helvetica', sans-serif;
 }
 
 .footer-greeting {
-  font-size: 6px;
-  color: #555555;
+  font-size: 11px;
   text-align: center;
-  line-height: 1.3;
+  line-height: 1.4;
   margin-top: 5px;
-  font-family: 'Arial', 'Helvetica', sans-serif;
 }
 
 .footer-greeting p {
-  margin: 1px 0;
-  font-family: 'Arial', 'Helvetica', sans-serif;
-}
-
-/* Divider */
-.receipt-divider {
-  border-top: 1px dashed #cccccc;
-  margin: 3px 0;
+  margin: 2px 0;
 }
 
 /* ─────────────────────────────────────────────
    KITCHEN ORDER TICKET (KOT) STYLES
    ───────────────────────────────────────────── */
 .kot-card {
-  border: 1px dashed #999999;
+  border: 1px dashed #000000;
   page-break-inside: avoid;
   break-inside: avoid;
   overflow: visible;
@@ -293,44 +219,34 @@
   display: flex;
   justify-content: center;
   width: 100%;
-  margin: 5px 0 4px 0;
+  margin: 5px 0;
 }
 
 .kot-title {
-  font-size: 5px;
+  font-size: 16px;
   font-weight: bold;
-  letter-spacing: 0.2px;
   text-align: center;
-  color: #111111;
+  color: #000000;
   text-transform: uppercase;
-  font-family: 'Arial', 'Helvetica', sans-serif;
 }
 
 .kot-items-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 5px;
-  font-size: 4px;
-  table-layout: fixed;
-  word-wrap: break-word;
+  margin-bottom: 8px;
+  font-size: 11px;
 }
 
 .kot-items-table th {
-  border-bottom: 1px solid #111111;
-  padding: 2px 1px;
+  border-bottom: 1px solid #000000;
+  padding: 4px 2px;
   font-weight: bold;
   text-align: left;
-  font-size: 4px;
-  font-family: 'Arial', 'Helvetica', sans-serif;
 }
 
 .kot-items-table td {
-  border-bottom: 1px dashed #dddddd;
-  padding: 2.5px 1px;
-  font-size: 4px;
-  font-family: 'Arial', 'Helvetica', sans-serif;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  border-bottom: 1px dashed #000000;
+  padding: 5px 2px;
 }
 
 .kot-items-table th.text-right,
@@ -340,49 +256,44 @@
 
 .kot-items-table th:first-child,
 .kot-items-table td:first-child {
-  padding-left: 1px;
-  width: 72%;
+  padding-left: 2px;
+  width: 75%;
 }
 
 .kot-items-table th:last-child,
 .kot-items-table td:last-child {
-  padding-right: 1px;
-  width: 28%;
+  padding-right: 2px;
+  width: 25%;
 }
 
 .kot-footer {
   text-align: center;
-  font-size: 4px;
+  font-size: 11px;
   font-weight: bold;
-  color: #555555;
-  margin-top: 5px;
-  letter-spacing: 0.5px;
-  font-family: 'Arial', 'Helvetica', sans-serif;
+  margin-top: 8px;
+  border-top: 1px dashed #000000;
+  padding-top: 5px;
 }
 
 /* ─────────────────────────────────────────────
-   PRINT STYLESHEET OVERRIDES for 35mm paper
+   PRINT STYLESHEET OVERRIDES for 80mm/58mm paper
    ───────────────────────────────────────────── */
 @media print {
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
-  
     color: #000000 !important;
-    font-weight: 800 !important;
+    background: #ffffff !important;
     border-color: #000000 !important;
-    /* Thermal printers drop sub-pixels, enforce minimum thickness */
-    border-width: 1px !important;
-}
+  }
 
   html,
   body {
     margin: 0;
     padding: 0;
     height: auto;
-    background: white;
-    overflow: visible !important;
+    background: #ffffff;
   }
 
   body * {
@@ -400,222 +311,39 @@
     top: 0 !important;
     width: 100% !important;
     height: auto !important;
-    min-height: 100% !important;
     opacity: 1 !important;
     display: block !important;
     z-index: 99999 !important;
-    pointer-events: none !important;
-    background: white !important;
-    overflow: visible !important;
+    background: #ffffff !important;
   }
 
   .receipt-modal-wrapper {
     box-shadow: none !important;
     border: none !important;
-    background: white !important;
+    background: #ffffff !important;
     padding: 0 !important;
     margin: 0 !important;
     display: block !important;
     width: 100% !important;
-    gap: 0 !important;
-    overflow: visible !important;
   }
 
-  .receipt-content {
-    display: block !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  #receipt-card-container {
-    display: block !important;
-    margin: 0 auto !important;
-    padding: 5px !important;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    overflow: visible !important;
-    height: auto !important;
-  }
-
+  #receipt-card-container,
   #kot-card-container {
     display: block !important;
     margin: 0 auto !important;
-    padding: 5px !important;
+    border: none !important;
+    width: 280px !important;
+    max-width: 280px !important;
+    background: #ffffff !important;
+  }
+
+  #kot-card-container {
     page-break-before: always !important;
     break-before: page !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    overflow: visible !important;
-    height: auto !important;
-  }
-
-  .receipt-card {
-    border: none !important;
-    box-shadow: none !important;
-    padding: 6px !important;
-    margin: 0 auto !important;
-    width: 125px !important;
-    max-width: 125px !important;
-    font-size: 4px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    background: white !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    overflow: visible !important;
-    height: auto !important;
-    min-height: auto !important;
-  }
-
-  /* Ensure proper spacing and prevent cutting */
-  .receipt-dark-header {
-    padding: 3px 0 5px 0 !important;
-    margin-bottom: 3px !important;
-  }
-
-  .receipt-logo {
-    max-height: 20px !important;
-    max-width: 32px !important;
-  }
-
-  .receipt-outlet-name {
-    font-size: 5.5px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    margin-bottom: 1px !important;
-  }
-
-  .receipt-header-detail {
-    font-size: 4px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    margin: 0.5px 0 !important;
-  }
-
-  .receipt-slogan {
-    font-size: 4px !important;
-    margin-top: 2px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-  }
-
-  .meta-col p {
-    font-size: 4px !important;
-    margin: 0.5px 0 !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-  }
-
-  .ledger-title-band {
-    font-size: 5.5px !important;
-    padding: 1.5px 0 !important;
-    margin-top: 2px !important;
-    margin-bottom: 2px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-  }
-
-  .receipt-items-table {
-    font-size: 5px !important;
-    margin-bottom: 3px !important;
-    table-layout: auto !important;
-  }
-
-  .receipt-items-table th,
-  .receipt-items-table td {
-    font-size: 5px !important;
-    padding: 1.5px 0.5px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-  }
-
-  .receipt-total-band {
-    font-size: 6.5px !important;
-    padding: 3px 0 !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-  }
-
-  .kot-title {
-    font-size: 6.5px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-  }
-
-  .kot-items-table {
-    font-size: 5px !important;
-    table-layout: auto !important;
-  }
-
-  .kot-items-table th,
-  .kot-items-table td {
-    font-size: 5px !important;
-    padding: 1.5px 0.5px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-  }
-
-  .footer-greeting {
-    font-size: 5px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    margin-top: 3px !important;
-  }
-
-  .receipt-divider {
-    margin: 2px 0 !important;
-  }
-
-  .kot-footer {
-    font-size: 5px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    margin-top: 3px !important;
-  }
-
-  .stamp-footer-container {
-    margin-top: 3px !important;
-  }
-
-  .paid-stamp {
-    font-size: 5px !important;
-    padding: 1.5px 10px !important;
-  }
-
-  .summary-row {
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    font-size: 5px !important;
-    padding: 1px 0 !important;
-  }
-
-  .amount-in-words {
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    font-size: 5px !important;
-    padding-bottom: 3px !important;
-    margin-bottom: 3px !important;
-  }
-
-  .payment-details-block h3 {
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    font-size: 5.5px !important;
-  }
-
-  .pay-detail-row {
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    font-size: 5px !important;
-    padding: 1px 0 !important;
   }
 }
 
-/* Additional print optimization for 35mm thermal printers */
 @page {
-  size: 35mm auto;
+  size: 80mm auto;
   margin: 0mm;
-}
-
-@media print and (max-width: 35mm) {
-  .receipt-card {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding: 4px !important;
-  }
-
-  .receipt-logo {
-    max-height: 18px !important;
-    max-width: 28px !important;
-  }
-
-  .receipt-outlet-name {
-    font-size: 6.5px !important;
-  }
 }
