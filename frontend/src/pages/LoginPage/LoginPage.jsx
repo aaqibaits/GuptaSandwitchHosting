@@ -270,7 +270,7 @@ export default function Login({ onLogin }) {
           </form>
 
           {/* Demo credentials hint */}
-          <div className="gs-divider"><span>demo credentials</span></div>
+          {/* <div className="gs-divider"><span>demo credentials</span></div>
           <div className="gs-demo-box">
             <div className="gs-demo-row">
               <span className="gs-demo-role">Admin</span>
@@ -278,7 +278,7 @@ export default function Login({ onLogin }) {
               <code>SuperAdmin@123</code>
             </div>
             
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

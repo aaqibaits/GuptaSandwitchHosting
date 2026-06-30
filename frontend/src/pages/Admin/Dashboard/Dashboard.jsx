@@ -77,7 +77,7 @@ export default function Dashboard({ selectedOutlet = "All Outlets" }) {
   }, []);
 
   const allOrders = periodData[period] || [];
-  
+
   // Filter based on selectedOutlet
   let filteredOutlets = outlets;
   let filteredOrders = allOrders;
@@ -113,7 +113,7 @@ export default function Dashboard({ selectedOutlet = "All Outlets" }) {
     datasets: [
       {
         data: finalOrders,
-        backgroundColor: "#3B82F6", // Professional blue
+        backgroundColor: "#f5c842", // Brand yellow
         borderRadius: 4,
         barThickness: 75, // Fixed width (approx 2cm on standard screens)
       },
@@ -126,9 +126,9 @@ export default function Dashboard({ selectedOutlet = "All Outlets" }) {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: "#1e293b",
-        titleColor: "#f1f5f9",
-        bodyColor: "#cbd5e1",
+        backgroundColor: "#1a1208",
+        titleColor: "#f5c842",
+        bodyColor: "#f5e6c8",
         padding: 8,
         cornerRadius: 4,
         titleFont: { size: 12, weight: "normal" },
@@ -141,18 +141,21 @@ export default function Dashboard({ selectedOutlet = "All Outlets" }) {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: "#64748b", font: { size: 12, weight: "normal" } },
+        ticks: { color: "#f5c842", font: { size: 12, weight: "normal" } },
       },
       y: {
-        grid: { color: "#e2e8f0", drawBorder: false },
+        grid: { color: "#f5e6c8", drawBorder: false },
         ticks: {
-          color: "#64748b",
+          color: "#a87c3f",
           font: { size: 11 },
-          callback: (value) => value.toLocaleString(),
-          stepSize: 20,
+          precision: 0,
+          callback: function(value) {
+            if (Math.floor(value) === value) {
+              return value.toLocaleString();
+            }
+          },
         },
         beginAtZero: true,
-        max: 120,
       },
     },
   };
@@ -229,4 +232,3 @@ export default function Dashboard({ selectedOutlet = "All Outlets" }) {
     </div>
   );
 }
-

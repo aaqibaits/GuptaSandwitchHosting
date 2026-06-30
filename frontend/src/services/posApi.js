@@ -82,7 +82,7 @@ export const applyDiscount = ({ subtotal, discount = {}, orderType = ORDER_TYPES
   }
 
   const afterDiscount = roundMoney(baseSubtotal - discountAmount);
-  const total = afterDiscount;
+  const total = Math.round(afterDiscount);
 
   return {
     subtotal: baseSubtotal,

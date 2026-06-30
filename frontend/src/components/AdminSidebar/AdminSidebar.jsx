@@ -4,10 +4,10 @@ import "./AdminSidebar.css";
 
 const NAV_ITEMS = [
   { page: "dashboard", icon: "ti-layout-dashboard", label: "Dashboard" },
-  { page: "dishes",    icon: "ti-soup",              label: "Dishes" },
-  { page: "reports",   icon: "ti-chart-bar",         label: "Reports" },
-  { page: "accounting",icon: "ti-receipt",           label: "Accounting" },
-  { page: "outlets",   icon: "ti-location-pin",      label: "Outlets" },
+  { page: "dishes", icon: "ti-soup", label: "Dishes" },
+  { page: "reports", icon: "ti-chart-bar", label: "Reports" },
+  { page: "accounting", icon: "ti-receipt", label: "Accounting" },
+  { page: "outlets", icon: "ti-location-pin", label: "Outlets" },
 ];
 
 export default function Sidebar({ currentPage, setCurrentPage, onLogout, currentUser }) {
@@ -21,8 +21,11 @@ export default function Sidebar({ currentPage, setCurrentPage, onLogout, current
   return (
     <aside className="sidebar1">
       <div className="sb-brand1">
-        <div className="sb-brand-name1">🥪 Gupta Sandwich</div>
-        <div className="sb-brand-sub1">Admin Panel</div>
+        <div className="sb-logo-emoji">🥪</div>
+        <div className="sb-brand-text1">
+          <div className="sb-brand-name1">Gupta Sandwich</div>
+          <div className="sb-brand-sub1">Admin Panel</div>
+        </div>
       </div>
 
       <nav className="sb-nav1">
@@ -44,7 +47,7 @@ export default function Sidebar({ currentPage, setCurrentPage, onLogout, current
           <span>{currentUser?.role_label || currentUser?.role || 'Admin'}</span>
           <small>{isSuperAdmin ? 'All outlets access' : 'Single outlet access'}</small>
         </div>
-        
+
         {/* Logout Button */}
         <button className="logout-btn1" onClick={onLogout}>
           <i className="ti-power-off"></i>

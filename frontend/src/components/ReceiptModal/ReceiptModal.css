@@ -1,73 +1,349 @@
-/* components/ReceiptModal.css */
-.receipt-modal {
-  background: var(--surface);
-  border-radius: 16px;
-  width: 320px;
-  overflow: hidden;
-  border: 1px solid var(--border);
+/* Receipt Modal Overlay - Hidden Off-Screen for Auto Capture */
+.receipt-overlay {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 300px;
+  height: auto;
+  opacity: 0.01;
+  pointer-events: none;
+  z-index: -9999;
+  overflow: visible;
 }
 
-.receipt-head {
-  background: var(--sidebar);
-  padding: 20px;
-  text-align: center;
-  color: #fff;
-}
-
-.receipt-head h3 {
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.receipt-head p {
-  font-size: 11px;
-  opacity: 0.7;
-  margin-top: 3px;
-}
-
-.receipt-body {
-  padding: 16px;
-  font-size: 12px;
-}
-
-.receipt-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-  border-bottom: 1px dashed var(--border);
-}
-
-.receipt-total {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 0;
-  font-weight: 700;
-  font-size: 15px;
-  border-top: 2px solid var(--text);
-  margin-top: 6px;
-}
-
-.receipt-footer {
-  text-align: center;
-  padding: 14px;
-  background: var(--bg);
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.btn-print {
+.receipt-modal-wrapper {
+  background-color: #ffffff;
+  padding: 5px;
   width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  background: var(--sidebar);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  margin-top: 12px;
-  cursor: pointer;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.btn-print:hover {
-  opacity: 0.9;
+/* Receipt Content Wrapper */
+.receipt-content {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Receipt Card Layout - Styled for 280px width */
+.receipt-card {
+  background-color: #ffffff;
+  padding: 8px;
+  border: 1px solid #000000;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  color: #000000;
+  font-size: 11px;
+  line-height: 1.4;
+  box-sizing: border-box;
+  width: 280px;
+  margin: 0 auto;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  overflow: visible;
+}
+
+/* Header Block */
+.receipt-dark-header {
+  background-color: #ffffff;
+  color: #000000;
+  padding: 5px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed #000000;
+  text-align: center;
+}
+
+.header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.header-left {
+  flex-shrink: 0;
+}
+
+.receipt-logo {
+  max-height: 48px;
+  max-width: 80px;
+  object-fit: contain;
+  background-color: transparent;
+}
+
+.header-right {
+  text-align: right;
+  flex: 1;
+}
+
+.receipt-outlet-name {
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  margin: 0 0 2px 0;
+  color: #000000;
+  text-transform: uppercase;
+}
+
+.receipt-header-detail {
+  font-size: 10px;
+  margin: 1px 0;
+  line-height: 1.3;
+}
+
+.receipt-slogan {
+  font-size: 10px;
+  font-style: italic;
+  text-align: center;
+  margin-top: 5px;
+}
+
+/* Metadata Grid Section */
+.receipt-meta-grid {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.meta-col p {
+  margin: 2px 0;
+  font-size: 10px;
+}
+
+.meta-col span {
+  font-weight: bold;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* Sales Ledger Title */
+.ledger-title-band {
+  font-weight: bold;
+  font-size: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  letter-spacing: 0.5px;
+  text-align: center;
+  padding: 3px 0;
+  border-top: 1px dashed #000000;
+  border-bottom: 1px dashed #000000;
+  text-transform: uppercase;
+}
+
+/* Items Table */
+.receipt-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+.receipt-items-table th {
+  border-bottom: 1px solid #000000;
+  padding: 4px 2px;
+  font-weight: bold;
+  text-align: left;
+}
+
+.receipt-items-table td {
+  border-bottom: 1px dashed #e0e0e0;
+  padding: 5px 2px;
+  vertical-align: middle;
+}
+
+.receipt-items-table th.text-right,
+.receipt-items-table td.text-right {
+  text-align: right;
+}
+
+.receipt-items-table th:first-child,
+.receipt-items-table td:first-child {
+  padding-left: 2px;
+  width: 50%;
+}
+
+.receipt-items-table th:last-child,
+.receipt-items-table td:last-child {
+  padding-right: 2px;
+}
+
+/* Grand Total Band */
+.receipt-total-band {
+  background-color: #ffffff;
+  color: #000000;
+  padding: 6px 2px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 13px;
+  margin-bottom: 5px;
+  border-top: 1.5px solid #000000;
+  border-bottom: 1.5px solid #000000;
+}
+
+/* Stamp and Footer */
+.stamp-footer-container {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.footer-greeting {
+  font-size: 11px;
+  text-align: center;
+  line-height: 1.4;
+  margin-top: 5px;
+}
+
+.footer-greeting p {
+  margin: 2px 0;
+}
+
+/* ─────────────────────────────────────────────
+   KITCHEN ORDER TICKET (KOT) STYLES
+   ───────────────────────────────────────────── */
+.kot-card {
+  border: 1px dashed #000000;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  overflow: visible;
+}
+
+.kot-title-section {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 5px 0;
+}
+
+.kot-title {
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  color: #000000;
+  text-transform: uppercase;
+}
+
+.kot-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+.kot-items-table th {
+  border-bottom: 1px solid #000000;
+  padding: 4px 2px;
+  font-weight: bold;
+  text-align: left;
+}
+
+.kot-items-table td {
+  border-bottom: 1px dashed #000000;
+  padding: 5px 2px;
+}
+
+.kot-items-table th.text-right,
+.kot-items-table td.text-right {
+  text-align: right;
+}
+
+.kot-items-table th:first-child,
+.kot-items-table td:first-child {
+  padding-left: 2px;
+  width: 75%;
+}
+
+.kot-items-table th:last-child,
+.kot-items-table td:last-child {
+  padding-right: 2px;
+  width: 25%;
+}
+
+.kot-footer {
+  text-align: center;
+  font-size: 11px;
+  font-weight: bold;
+  margin-top: 8px;
+  border-top: 1px dashed #000000;
+  padding-top: 5px;
+}
+
+/* ─────────────────────────────────────────────
+   PRINT STYLESHEET OVERRIDES for 80mm/58mm paper
+   ───────────────────────────────────────────── */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    border-color: #000000 !important;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    height: auto;
+    background: #ffffff;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt-overlay,
+  .receipt-overlay * {
+    visibility: visible;
+  }
+
+  .receipt-overlay {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    opacity: 1 !important;
+    display: block !important;
+    z-index: 99999 !important;
+    background: #ffffff !important;
+  }
+
+  .receipt-modal-wrapper {
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  #receipt-card-container,
+  #kot-card-container {
+    display: block !important;
+    margin: 0 auto !important;
+    border: none !important;
+    width: 280px !important;
+    max-width: 280px !important;
+    background: #ffffff !important;
+  }
+
+  #kot-card-container {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+}
+
+@page {
+  size: 80mm auto;
+  margin: 0mm;
 }

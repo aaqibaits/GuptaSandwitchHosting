@@ -41,6 +41,17 @@ const POSPage = ({
     [setOrderType, setCurrentOrder, showToast]
   );
 
+  const handleConfirmSwitch = useCallback(() => {
+    if (confirmSwitch.pendingType) {
+      applyTypeChange(confirmSwitch.pendingType);
+    }
+    setConfirmSwitch({ isOpen: false, pendingType: null });
+  }, [confirmSwitch.pendingType, applyTypeChange]);
+
+  const handleCancelSwitch = useCallback(() => {
+    setConfirmSwitch({ isOpen: false, pendingType: null });
+  }, []);
+
   const orderTotals = useMemo(() => {
     const subtotal = currentOrder.reduce(
       (sum, item) => sum + (item.price || 0) * (item.qty || 1),
@@ -49,12 +60,13 @@ const POSPage = ({
     const calculated = applyDiscount({ subtotal, discount, orderType });
     return {
       discountAmount: calculated.discountAmount,    
-      total: calculated.afterDiscount,
+      total: calculated.total,
     };
   }, [currentOrder, discount, orderType]);
 
   const handleAddItem = useCallback(
     (item) => {
+      const qtyToAdd = item.qty || 1;
       setCurrentOrder((prev) => {
         const existing = prev.find(
           (o) => o.id === item.id || o.dishId === item.dishId
@@ -62,18 +74,49 @@ const POSPage = ({
         if (existing) {
           return prev.map((o) =>
             o.id === item.id || o.dishId === item.dishId
-              ? { ...o, qty: o.qty + 1 }
+              ? { ...o, qty: o.qty + qtyToAdd }
               : o
           );
         }
-        return [...prev, { ...item, qty: 1 }];
+        return [...prev, { ...item, qty: qtyToAdd }];
       });
       showToast?.(
-        `✅ ${item.name} added (${orderType === 'parcel' ? 'Parcel' : 'Dine-in'})`
+        `✅ ${qtyToAdd > 1 ? qtyToAdd + ' ' : ''}${item.name} added (${orderType === 'parcel' ? 'Parcel' : 'Dine-in'})`
       );
     },
     [setCurrentOrder, showToast, orderType]
   );
+
+  const handleRemoveItem = useCallback((dishId, quantity = 1) => {
+    let removedName = "";
+    let actualRemovedQty = 0;
+    setCurrentOrder((prev) => {
+      if (prev.length === 0) return prev;
+      const targetId = dishId || prev[prev.length - 1].id;
+      const item = prev.find((o) => o.id === targetId || o.dishId === targetId);
+      if (!item) return prev;
+      removedName = item.name;
+      actualRemovedQty = Math.min(item.qty, quantity);
+      if (item.qty <= quantity) {
+        return prev.filter((o) => o.id !== targetId && o.dishId !== targetId);
+      }
+      return prev.map((o) =>
+        o.id === targetId || o.dishId === targetId
+          ? { ...o, qty: o.qty - quantity }
+          : o
+      );
+    });
+    if (removedName) {
+      showToast?.(`🗑️ Removed ${actualRemovedQty} ${removedName}`);
+    } else {
+      showToast?.("🛒 Cart is empty");
+    }
+  }, [setCurrentOrder, showToast]);
+
+  const handleClearCart = useCallback(() => {
+    setCurrentOrder([]);
+    showToast?.("🧹 Cart cleared");
+  }, [setCurrentOrder, showToast]);
 
   const handleQuantityChange = useCallback(
     (index, delta) => {
@@ -153,17 +196,23 @@ const POSPage = ({
         isSubmitting={isSubmitting}
         orderLabel={lastOrderNumber || 'NEW'}
       />
-      {/* <voicebot/> */}
-      <VoiceBot onAddItem={handleAddItem} showToast={showToast} orderType={orderType} />
+      <VoiceBot
+        onAddItem={handleAddItem}
+        showToast={showToast}
+        orderType={orderType}
+        onRemoveItem={handleRemoveItem}
+        onClearCart={handleClearCart}
+        onOrderTypeChange={handleOrderTypeChange}
+        isConfirmationOpen={confirmSwitch.isOpen}
+        onConfirm={handleConfirmSwitch}
+        onCancel={handleCancelSwitch}
+      />
       <ConfirmationModal
         isOpen={confirmSwitch.isOpen}
         title="Switch Order Type"
         message={`Switch to ${confirmSwitch.pendingType === 'parcel' ? 'Parcel' : 'Dine-in'}? Prices will update for items in cart.`}
-        onConfirm={() => {
-          applyTypeChange(confirmSwitch.pendingType);
-          setConfirmSwitch({ isOpen: false, pendingType: null });
-        }}
-        onCancel={() => setConfirmSwitch({ isOpen: false, pendingType: null })}
+        onConfirm={handleConfirmSwitch}
+        onCancel={handleCancelSwitch}
       />
     </div>
   );
