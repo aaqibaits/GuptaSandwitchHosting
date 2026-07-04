@@ -406,3 +406,26 @@ exports.getRecentOrders = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * GET /api/reports/food-cost
+ * Returns real ingredient usage & cost from dish_ingredients, filtered by outlet/date
+ */
+exports.getFoodCostReport = async (req, res, next) => {
+  try {
+    const { whereClause, params } = buildReportFilters(req, 'o', { excludeCancelled: true });
+    const rows = await sql.getFoodCostReport(whereClause, params);
+
+    const data = rows.map(r => ({
+      ingredientName: r.ingredient_name,
+      unit: r.unit,
+      costPerUnit: parseToNumber(r.cost_per_unit),
+      totalQuantityUsed: parseToNumber(r.total_quantity_used),
+      totalCost: parseToNumber(r.total_cost),
+    }));
+
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+};

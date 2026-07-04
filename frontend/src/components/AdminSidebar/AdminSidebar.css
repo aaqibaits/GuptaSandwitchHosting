@@ -126,3 +126,82 @@
 .logout-btn1:active {
   transform: scale(0.98);
 }
+
+@media (max-width: 768px) {
+  .sidebar1 {
+    width: 64px !important;
+    min-width: 64px !important;
+    align-items: center;
+  }
+
+  .sb-brand1 {
+    padding: 12px 0;
+    text-align: center;
+    width: 100%;
+  }
+
+  .sb-brand-name1 {
+    font-size: 0 !important;
+  }
+  
+  .sb-brand-name1::before {
+    content: "🥪";
+    font-size: 20px;
+    display: block;
+  }
+  
+  .sb-brand-sub1 {
+    display: none !important;
+  }
+
+  .sb-nav-label1 {
+    display: none !important;
+  }
+
+  .nav-item1 {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    justify-content: center;
+    padding: 0 !important;
+    font-size: 0 !important;
+    border-left: none !important;
+  }
+
+  .nav-item1 i {
+    font-size: 20px !important;
+    margin: 0 !important;
+  }
+
+  .nav-item1.active {
+    background: rgba(245, 200, 66, 0.15) !important;
+    border-left: none !important;
+  }
+
+  .sb-foot1 {
+    padding: 8px 0;
+    width: 100%;
+    align-items: center;
+  }
+
+  .role-pill1 {
+    display: none !important;
+  }
+
+  .logout-btn1 {
+    width: 44px !important;
+    height: 44px !important;
+    padding: 0 !important;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .logout-btn1 span {
+    display: none !important;
+  }
+
+  .logout-btn1 i {
+    font-size: 18px !important;
+    margin: 0 !important;
+  }
+}

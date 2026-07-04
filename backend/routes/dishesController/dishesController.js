@@ -53,7 +53,7 @@ const createDish = async (req, res) => {
     console.log("Body:", req.body);
     console.log("File:", req.file);
 
-    const { category, name, dine_price, parcel_price, swiggy_price, zomato_price, ingredients, outlets } = req.body;
+    const { category, name, dine_price, parcel_price, swiggy_price, zomato_price, ingredients, outlets, recipe } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Dish name is required" });
@@ -81,7 +81,8 @@ const createDish = async (req, res) => {
       zomato_price: zomato_price ? parseFloat(zomato_price) : null,
       ingredients: ingredients || '',
       outlets: parsedOutlets || ['All'],
-      image_url: req.file ? `/uploads/dishes/${req.file.filename}` : null
+      image_url: req.file ? `/uploads/dishes/${req.file.filename}` : null,
+      recipe: recipe ? (typeof recipe === 'string' ? JSON.parse(recipe) : recipe) : [],
     };
 
     console.log("Dish data to save:", dishData);
@@ -113,7 +114,7 @@ const editDish = async (req, res) => {
   try {
     const { id } = req.params;
     const oldDish = await getDishById(id);
-    const { name, category, dine_price, parcel_price, swiggy_price, zomato_price, ingredients, outlets } = req.body;
+    const { name, category, dine_price, parcel_price, swiggy_price, zomato_price, ingredients, outlets, recipe } = req.body;
 
     const dishData = {};
 
@@ -136,6 +137,9 @@ const editDish = async (req, res) => {
       }
     }
     if (req.file) dishData.image_url = `/uploads/dishes/${req.file.filename}`;
+    if (recipe !== undefined) {
+      dishData.recipe = typeof recipe === 'string' ? JSON.parse(recipe) : (recipe || []);
+    }
 
     const dish = await updateDish(id, dishData);
 

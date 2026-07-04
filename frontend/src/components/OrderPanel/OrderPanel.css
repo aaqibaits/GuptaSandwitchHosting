@@ -303,7 +303,9 @@
   gap: 7px;
 }
 
-.btn-cash, .btn-online, .btn-new {
+.btn-cash,
+.btn-online,
+.btn-new {
   flex: 1;
   padding: 9px;
   border-radius: 8px;

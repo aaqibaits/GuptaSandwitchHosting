@@ -8,38 +8,11 @@ import {
   fetchHourlySalesReport,
   fetchOrderTypesReport,
   fetchTopItemsReport,
-  fetchRecentOrdersReport
+  fetchRecentOrdersReport,
+  fetchFoodCostReport
 } from "../../../services/reportapi";
 import "./Reports.css";
 import { utils, writeFile } from "xlsx";
-
-const COST_PER_GRAM = {
-  "Chicken": 0.35,
-  "Butter": 0.5,
-  "Cream": 0.4,
-  "Tomato Puree": 0.08,
-  "Spices": 0.6,
-  "Paneer": 0.45,
-  "Yogurt": 0.1,
-  "Bell Peppers": 0.12,
-  "Flour": 0.04,
-  "Garlic": 0.2,
-  "Rice": 0.06,
-  "Saffron": 3.5,
-  "Milk Powder": 0.25,
-  "Sugar": 0.05,
-  "Rose Water": 0.3,
-  "Rice Batter": 0.05,
-  "Potato": 0.03,
-  "Onion": 0.04,
-  "Milk": 0.06,
-  "Coffee": 1.2,
-  "Ice Cream": 0.18,
-  "Noodles": 0.15,
-  "Cabbage": 0.025,
-  "Carrot": 0.04,
-  "Spring Roll Sheet": 0.1,
-};
 
 const formatDate = (date) => {
   const d = new Date(date);
@@ -82,6 +55,7 @@ export default function Reports({ selectedOutlet = "All Outlets" }) {
   const [topItemsData, setTopItemsData] = useState(null);
   const [recentOrders, setRecentOrders] = useState([]);
   const [dishesData, setDishesData] = useState([]);
+  const [foodCostData, setFoodCostData] = useState([]); // real ingredient usage from backend
 
   // Load Outlets once on mount
   useEffect(() => {
@@ -130,7 +104,8 @@ export default function Reports({ selectedOutlet = "All Outlets" }) {
           orderTypesRes,
           topItemsRes,
           recentOrdersRes,
-          dishesRes
+          dishesRes,
+          foodCostRes
         ] = await Promise.all([
           fetchSummaryReport(filters),
           fetchPaymentAnalyticsReport(filters),
@@ -139,7 +114,8 @@ export default function Reports({ selectedOutlet = "All Outlets" }) {
           fetchOrderTypesReport(filters),
           fetchTopItemsReport(filters),
           fetchRecentOrdersReport({ ...filters, limit: 1000 }),
-          fetchDishes()
+          fetchDishes(),
+          fetchFoodCostReport(filters)
         ]);
 
         setSummaryData(summaryRes.data || summaryRes);
@@ -150,6 +126,7 @@ export default function Reports({ selectedOutlet = "All Outlets" }) {
         setTopItemsData(topItemsRes.data || topItemsRes);
         setRecentOrders(recentOrdersRes.data || recentOrdersRes || []);
         setDishesData(dishesRes.data || dishesRes || []);
+        setFoodCostData(foodCostRes?.data || []);
       } catch (err) {
         console.error("Failed to fetch reports:", err);
         setError("Failed to fetch data. Is the backend API server online?");
@@ -324,103 +301,18 @@ export default function Reports({ selectedOutlet = "All Outlets" }) {
       .sort((a, b) => b.revenue - a.revenue);
   }, [hourlyData]);
 
-  // ── 5. Food Cost / Ingredient consumption mapping ──
-  const ingredientUsage = useMemo(() => {
-    if (!topItemsData || !topItemsData.topSelling) return [];
-
-    const ingredientMap = new Map();
-    const RECIPES = {
-      "Butter Chicken": [
-        { name: "Chicken", qty: 200 },
-        { name: "Butter", qty: 30 },
-        { name: "Cream", qty: 25 },
-        { name: "Tomato Puree", qty: 80 },
-        { name: "Spices", qty: 15 }
-      ],
-      "Paneer Tikka": [
-        { name: "Paneer", qty: 180 },
-        { name: "Yogurt", qty: 40 },
-        { name: "Spices", qty: 10 },
-        { name: "Bell Peppers", qty: 50 }
-      ],
-      "Garlic Naan": [
-        { name: "Flour", qty: 80 },
-        { name: "Butter", qty: 10 },
-        { name: "Garlic", qty: 5 }
-      ],
-      "Biryani": [
-        { name: "Rice", qty: 150 },
-        { name: "Chicken", qty: 120 },
-        { name: "Spices", qty: 20 },
-        { name: "Saffron", qty: 2 }
-      ],
-      "Gulab Jamun": [
-        { name: "Milk Powder", qty: 50 },
-        { name: "Sugar", qty: 40 },
-        { name: "Rose Water", qty: 5 }
-      ],
-      "Masala Dosa": [
-        { name: "Rice Batter", qty: 120 },
-        { name: "Potato", qty: 80 },
-        { name: "Onion", qty: 30 },
-        { name: "Spices", qty: 8 }
-      ],
-      "Cold Coffee": [
-        { name: "Milk", qty: 150 },
-        { name: "Coffee", qty: 8 },
-        { name: "Sugar", qty: 15 },
-        { name: "Ice Cream", qty: 40 }
-      ],
-      "Spring Rolls": [
-        { name: "Noodles", qty: 60 },
-        { name: "Cabbage", qty: 40 },
-        { name: "Carrot", qty: 30 },
-        { name: "Spring Roll Sheet", qty: 25 }
-      ]
-    };
-
-    topItemsData.topSelling.forEach((item) => {
-      const qtySold = Number(item.quantitySold || item.quantity_sold || 0);
-      if (qtySold <= 0) return;
-
-      let recipe = RECIPES[item.dishName];
-
-      if (!recipe) {
-        const dishObj = dishesData.find((d) => d.name === item.dishName);
-        if (dishObj && dishObj.ingredients) {
-          recipe = dishObj.ingredients.map((ingName) => ({
-            name: ingName,
-            qty: 50
-          }));
-        }
-      }
-
-      if (recipe) {
-        recipe.forEach((ing) => {
-          const totalIngQty = ing.qty * qtySold;
-          ingredientMap.set(
-            ing.name,
-            (ingredientMap.get(ing.name) || 0) + totalIngQty
-          );
-        });
-      }
-    });
-
-    return Array.from(ingredientMap.entries())
-      .map(([name, qty]) => ({ name, quantity: qty, unit: "grams" }))
-      .sort((a, b) => b.quantity - a.quantity);
-  }, [topItemsData, dishesData]);
+  // ── 5. Food Cost / Ingredient consumption — real data from backend ──
+  // foodCostData is already fetched; just alias for display convenience
+  const ingredientUsage = foodCostData;
 
   const totalIngredientCost = useMemo(() => {
-    return ingredientUsage.reduce((sum, ing) => {
-      const costPerGram = COST_PER_GRAM[ing.name] || 0.2;
-      return sum + ing.quantity * costPerGram;
-    }, 0);
+    return ingredientUsage.reduce((sum, ing) => sum + (ing.totalCost || 0), 0);
   }, [ingredientUsage]);
 
   const foodCostPercentage = useMemo(() => {
     if (!totalRevenue) return 0;
-    return (totalIngredientCost / totalRevenue) * 100;
+    const pct = (totalIngredientCost / totalRevenue) * 100;
+    return Math.min(pct, 100);
   }, [totalIngredientCost, totalRevenue]);
 
   // ── Excel Exports ────────────────────────────────────────────────────────
@@ -624,21 +516,20 @@ export default function Reports({ selectedOutlet = "All Outlets" }) {
       [`Filtered by Outlet: ${selectedOutletId === "all" ? "All Outlets" : outletsList.find(o => o.id === Number(selectedOutletId))?.name || "Selected Outlet"}`],
       [`Date Range: ${dateRange === "today" ? "Today" : dateRange === "yesterday" ? "Yesterday" : "Last 7 days"}`],
       [],
-      ["Ingredient Name", "Quantity Used (g)", "Quantity (kg)", "Est. Cost (₹)"]
+      ["Ingredient Name", "Unit", "Quantity Used", "Cost Per Unit (₹)", "Est. Total Cost (₹)"]
     ];
 
-    const dataRows = ingredientUsage.map(ing => {
-      const cost = ing.quantity * (COST_PER_GRAM[ing.name] || 0.2);
-      return [
-        ing.name,
-        ing.quantity,
-        ing.quantity / 1000,
-        Math.round(cost)
-      ];
-    });
+    const dataRows = ingredientUsage.map(ing => [
+      ing.ingredientName,
+      ing.unit,
+      Number(ing.totalQuantityUsed).toFixed(2),
+      Number(ing.costPerUnit).toFixed(2),
+      Math.round(ing.totalCost)
+    ]);
 
     const footerRow = [
       "Total Ingredient Cost",
+      "",
       "",
       "",
       Math.round(totalIngredientCost)
@@ -1124,32 +1015,26 @@ export default function Reports({ selectedOutlet = "All Outlets" }) {
             <thead>
               <tr>
                 <th>Ingredient Name</th>
-                <th>Quantity Used (grams)</th>
-                <th>Quantity (kg)</th>
-                <th>Est. Cost (₹)</th>
+                <th>Unit</th>
+                <th>Quantity Used</th>
+                <th>Cost Per Unit (₹)</th>
+                <th>Est. Total Cost (₹)</th>
               </tr>
             </thead>
             <tbody>
-              {ingredientUsage.map((ing) => {
-                const cost = ing.quantity * (COST_PER_GRAM[ing.name] || 0.2);
-                return (
-                  <tr key={ing.name}>
-                    <td>
-                      <strong>{ing.name}</strong>
-                    </td>
-                    <td>{ing.quantity.toLocaleString()} g</td>
-                    <td>{(ing.quantity / 1000).toFixed(2)} kg</td>
-                    <td>₹{Math.round(cost).toLocaleString()}</td>
-                  </tr>
-                );
-              })}
+              {ingredientUsage.map((ing) => (
+                <tr key={ing.ingredientName}>
+                  <td><strong>{ing.ingredientName}</strong></td>
+                  <td>{ing.unit}</td>
+                  <td>{Number(ing.totalQuantityUsed).toFixed(2)} {ing.unit}</td>
+                  <td>₹{Number(ing.costPerUnit).toFixed(2)}</td>
+                  <td>₹{Math.round(ing.totalCost).toLocaleString()}</td>
+                </tr>
+              ))}
               {ingredientUsage.length === 0 && (
                 <tr>
-                  <td
-                    colSpan="4"
-                    style={{ textAlign: "center", color: "#999" }}
-                  >
-                    No sales matching standard ingredient recipes.
+                  <td colSpan="5" style={{ textAlign: "center", color: "#999" }}>
+                    No dish recipes mapped yet. Add recipes to dishes in the Dishes page.
                   </td>
                 </tr>
               )}
@@ -1157,7 +1042,7 @@ export default function Reports({ selectedOutlet = "All Outlets" }) {
             {ingredientUsage.length > 0 && (
               <tfoot>
                 <tr className="total-row">
-                  <td colSpan="3">
+                  <td colSpan="4">
                     <strong>Total Ingredient Cost</strong>
                   </td>
                   <td>

@@ -24,6 +24,7 @@ import Accounting from './pages/Admin/Accounting/Accounting';
 // ✅ ADDED: Import AccountingForm — was missing, so the "Add entry" flow had nowhere to render
 import AccountingForm from './pages/Admin/Accounting/AccountingForm';
 import Outlets from './pages/Admin/Outlets/Outlets';
+import Ingredients from './pages/Admin/Ingredients/Ingredients';
 import StaffAccounting from './pages/StaffAccounting/StaffAccounting';
 import './App.css';
 
@@ -136,8 +137,16 @@ function App() {
         setStaffActivePage('dashboard');
       } else if (currentUser.role_label === 'Kitchen Staff') {
         setStaffActivePage('kot');
-      } else {
+      } else if (currentUser.role_label === 'Cashier' || currentUser.role_label === 'Manager') {
         setStaffActivePage('pos');
+      } else {
+        // Look up custom screen permissions and select the first available one
+        const allowedScreens = currentUser.permissions?.staff || [];
+        if (allowedScreens.length > 0) {
+          setStaffActivePage(allowedScreens[0]);
+        } else {
+          setStaffActivePage('pos'); // Fallback to POS if no custom permissions are set
+        }
       }
     }
   }, [currentUser]);
@@ -595,6 +604,9 @@ function App() {
 
             {staffActivePage === 'outlets' && (
               <Outlets currentUser={currentUser} />
+            )}
+            {staffActivePage === 'ingredients' && (
+              <Ingredients />
             )}
           </div>
         </div>

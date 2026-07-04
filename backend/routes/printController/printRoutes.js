@@ -46,27 +46,7 @@ router.post('/receipt', async (req, res) => {
 
       // Send to default system printer silently
       console.log(`Printing ${label} to default printer...`);
-      if (process.platform === 'win32') {
-        await pdfToPrinter.print(tempFilename);
-      } else {
-        const { exec } = require('child_process');
-        await new Promise((resolve, reject) => {
-          exec(`lp "${tempFilename}"`, (error, stdout, stderr) => {
-            if (error) {
-              console.warn(`lp failed, trying lpr: ${error.message}`);
-              exec(`lpr "${tempFilename}"`, (lprError, lprStdout, lprStderr) => {
-                if (lprError) {
-                  reject(new Error(`Linux printing failed. lp and lpr are not available or failed. lp error: ${error.message}. lpr error: ${lprError.message}`));
-                } else {
-                  resolve(lprStdout);
-                }
-              });
-            } else {
-              resolve(stdout);
-            }
-          });
-        });
-      }
+      await pdfToPrinter.print(tempFilename);
 
       // Clean up temp file
       fs.unlinkSync(tempFilename);
