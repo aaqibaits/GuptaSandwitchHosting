@@ -16,7 +16,7 @@ const {
   markBillUploaded,
   recordPayment,
   removeLedgerEntry,
-} = require('./AccountingController');
+} = require('./accountingController');
 
 // Ensure the upload directory exists before multer tries to write into it.
 // Without this the first file upload throws ENOENT.
