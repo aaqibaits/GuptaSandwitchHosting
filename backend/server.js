@@ -17,7 +17,7 @@ const outletReportsRoutes = require('./routes/OutletReportsControllers/outletRep
 const integrationRoutes = require('./routes/integrationControllers/integrationRoutes');
 const auditLogsRoutes = require('./routes/auditLogsController/auditLogsRoutes');
 // ✅ ADDED: Accounting routes — was missing entirely, which is why /api/accounting returned 404
-const accountingRoutes = require('./routes/accountingControllers/AccountingRoutes');
+const accountingRoutes = require('./routes/accountingControllers/accountingRoutes');
 const staffAccountingRoutes = require('./routes/staffAccountingControllers/staffAccountingRoutes');
 const ingredientsRoutes = require('./routes/ingredientsController/ingredientsRoutes');
 

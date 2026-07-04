@@ -326,7 +326,7 @@ function App() {
       const socketUrl = (
         import.meta.env.VITE_API_URL ||
         import.meta.env.REACT_APP_API_URL ||
-        'http://localhost:5000/api'
+        'http://localhost:5002/api'
       ).replace('/api', '');
 
       let outletId = currentUser.outlet_id || sessionStorage.getItem('gs_outlet_id') || 1;
