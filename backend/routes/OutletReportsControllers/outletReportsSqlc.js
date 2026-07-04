@@ -252,6 +252,29 @@ const getRecentOrders = async (whereClause, params, limit = 10) => {
   return rows;
 };
 
+/**
+ * Food Cost Report: real ingredient usage from dish_ingredients
+ * Joins order items -> dish_ingredients -> ingredients for real costs & units
+ */
+const getFoodCostReport = async (whereClause, params) => {
+  const query = `
+    SELECT
+      i.name                                                      AS ingredient_name,
+      i.unit                                                      AS unit,
+      MAX(i.cost_per_unit)                                        AS cost_per_unit,
+      SUM(it.quantity)                                            AS total_quantity_used,
+      SUM(it.quantity * it.unit_cost)                             AS total_cost
+    FROM inventory_transactions it
+    JOIN ingredients i ON i.id = it.ingredient_id AND i.is_deleted = false
+    JOIN orders o ON o.order_number = it.reference_id
+    ${whereClause}
+    GROUP BY i.id, i.name, i.unit
+    ORDER BY total_cost DESC
+  `;
+  const { rows } = await pool.query(query, params);
+  return rows;
+};
+
 module.exports = {
   getSummary,
   getOrderAnalytics,
@@ -264,5 +287,6 @@ module.exports = {
   getTableAnalytics,
   getRepeatCustomersCount,
   getTopCustomers,
-  getRecentOrders
+  getRecentOrders,
+  getFoodCostReport,
 };

@@ -4,10 +4,11 @@ import "./AdminSidebar.css";
 
 const NAV_ITEMS = [
   { page: "dashboard", icon: "ti-layout-dashboard", label: "Dashboard" },
-  { page: "dishes", icon: "ti-soup", label: "Dishes" },
-  { page: "reports", icon: "ti-chart-bar", label: "Reports" },
-  { page: "accounting", icon: "ti-receipt", label: "Accounting" },
-  { page: "outlets", icon: "ti-location-pin", label: "Outlets" },
+  { page: "dishes",    icon: "ti-soup",              label: "Dishes" },
+  { page: "ingredients", icon: "ti-salt",            label: "Ingredients" },
+  { page: "reports",   icon: "ti-chart-bar",         label: "Reports" },
+  { page: "accounting",icon: "ti-receipt",           label: "Accounting" },
+  { page: "outlets",   icon: "ti-location-pin",      label: "Outlets" },
 ];
 
 export default function Sidebar({ currentPage, setCurrentPage, onLogout, currentUser }) {

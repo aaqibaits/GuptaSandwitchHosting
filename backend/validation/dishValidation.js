@@ -19,7 +19,8 @@ const createDishSchema = Joi.object({
   swiggy_price: Joi.number().min(0).allow(null, '').optional(),
   zomato_price: Joi.number().min(0).allow(null, '').optional(),
   ingredients: Joi.any().optional(),
-  outlets: Joi.any().optional()
+  outlets: Joi.any().optional(),
+  recipe: Joi.any().optional()
 });
 
 const updateDishSchema = Joi.object({
@@ -30,7 +31,8 @@ const updateDishSchema = Joi.object({
   swiggy_price: Joi.number().min(0).allow(null, '').optional(),
   zomato_price: Joi.number().min(0).allow(null, '').optional(),
   ingredients: Joi.any().optional(),
-  outlets: Joi.any().optional()
+  outlets: Joi.any().optional(),
+  recipe: Joi.any().optional()
 });
 
 module.exports = {
