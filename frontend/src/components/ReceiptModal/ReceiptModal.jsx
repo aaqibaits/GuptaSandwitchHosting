@@ -277,23 +277,9 @@ const ReceiptModal = ({ data, onClose }) => {
             maxWidth: '380px',
             textAlign: 'center',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-            border: '1px solid #2d3139',
-            position: 'relative'
+            border: '1px solid #2d3139'
           }}>
-            <img 
-              src="/logo.jpeg" 
-              alt="Gupta Sandwich Logo" 
-              style={{ 
-                position: 'absolute', 
-                top: '12px', 
-                left: '12px', 
-                width: '32px', 
-                height: '32px', 
-                borderRadius: '6px', 
-                objectFit: 'cover' 
-              }} 
-            />
-            <h2 style={{ margin: '12px 0 12px 0', fontSize: '20px', color: '#4facfe' }}>🔌 USB Receipt Printer</h2>
+            <h2 style={{ margin: '0 0 12px 0', fontSize: '20px', color: '#4facfe' }}>🔌 USB Receipt Printer</h2>
             <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#a0aec0', lineHeight: 1.5 }}>
               No paired USB thermal printer detected. Please connect your printer via USB and pair it below.
             </p>
