@@ -144,12 +144,6 @@
     font-size: 0 !important;
   }
   
-  .sb-brand-name1::before {
-    content: "🥪";
-    font-size: 20px;
-    display: block;
-  }
-  
   .sb-brand-sub1 {
     display: none !important;
   }
