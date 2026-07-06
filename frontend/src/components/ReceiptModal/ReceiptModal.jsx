@@ -178,8 +178,8 @@ const ReceiptModal = ({ data, onClose }) => {
           setNeedsPairing(true);
         }
       } else {
-        console.warn('WebUSB not supported, falling back to server print/download.');
-        await handleFallbackPrint(receiptImg, kotImg);
+        console.warn('WebUSB not supported on this device/context. Showing pairing/download dialog.');
+        setNeedsPairing(true);
       }
     } catch (e) {
       console.error('Error in print flow:', e);
@@ -273,12 +273,27 @@ const ReceiptModal = ({ data, onClose }) => {
             color: '#fff',
             padding: '24px',
             borderRadius: '12px',
-            width: '380px',
+            width: '90%',
+            maxWidth: '380px',
             textAlign: 'center',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-            border: '1px solid #2d3139'
+            border: '1px solid #2d3139',
+            position: 'relative'
           }}>
-            <h2 style={{ margin: '0 0 12px 0', fontSize: '20px', color: '#4facfe' }}>🔌 USB Receipt Printer</h2>
+            <img 
+              src={logo} 
+              alt="Gupta Sandwich Logo" 
+              style={{ 
+                position: 'absolute', 
+                top: '12px', 
+                left: '12px', 
+                width: '32px', 
+                height: '32px', 
+                borderRadius: '6px', 
+                objectFit: 'cover' 
+              }} 
+            />
+            <h2 style={{ margin: '12px 0 12px 0', fontSize: '20px', color: '#4facfe' }}>🔌 USB Receipt Printer</h2>
             <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#a0aec0', lineHeight: 1.5 }}>
               No paired USB thermal printer detected. Please connect your printer via USB and pair it below.
             </p>
@@ -342,7 +357,7 @@ const ReceiptModal = ({ data, onClose }) => {
             <div className="receipt-dark-header">
               <div className="header-top-row">
                 <div className="header-left">
-                  <img src="/logo.jpeg" alt="Gupta Sandwich Logo" className="receipt-logo" />
+                  <img src={logo} alt="Gupta Sandwich Logo" className="receipt-logo" />
                 </div>
                 <div className="header-right">
                   <h2 className="receipt-outlet-name">{outletName || 'Gupta Sandwich'}</h2>
