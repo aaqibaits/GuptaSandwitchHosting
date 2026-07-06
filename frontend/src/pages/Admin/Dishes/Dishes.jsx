@@ -431,7 +431,7 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
               {/* Dish image */}
               <div className="dish-card__img-wrap">
                 {d.image_url
-                  ? <img src={`http://localhost:5000${d.image_url}`} alt={d.name} />
+                  ? <img src={`https://guptasandwich.work-desk.tech${d.image_url}`} alt={d.name} />
                   : <div className="dish-card__img-placeholder">🍽️</div>
                 }
               </div>

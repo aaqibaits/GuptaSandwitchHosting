@@ -6,6 +6,10 @@ export default defineConfig({
   define: {
     'process.env': {}  // This defines process.env globally
   },
+  build: {
+    outDir: 'build',
+    emptyOutDir: true,
+  },
   server: {
     port: 3000,
     proxy: {
