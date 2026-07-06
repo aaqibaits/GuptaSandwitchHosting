@@ -19,7 +19,7 @@
 
   .pos-layout .right-panel {
     width: 100% !important;
-    height: 50vh !important;
+    height: 50dvh !important;
     min-height: 300px;
     border-left: none;
     border-top: 1.5px solid var(--border);
