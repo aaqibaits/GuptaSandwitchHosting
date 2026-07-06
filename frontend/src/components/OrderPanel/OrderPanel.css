@@ -7,7 +7,7 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  height: 92vh;
+  height: 92dvh;
   overflow: hidden;
   position: sticky;
   top: 0;
@@ -299,6 +299,7 @@
 
 .action-btns {
   padding: 10px 14px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
   display: flex;
   gap: 7px;
 }
@@ -344,4 +345,280 @@
 
 .btn-new:hover {
   background: #4b5563;
+}
+
+/* ==========================================================================
+   RESPONSIVENESS (MEDIA QUERIES FOR MOBILE, TABLET, IPAD, DESKTOP SCREEN)
+   ========================================================================== */
+
+/* 1. Large Desktops (min-width: 1200px) */
+@media (min-width: 1200px) {
+  .right-panel {
+    width: 300px; /* Slightly wider for larger screens */
+  }
+}
+
+/* 2. Landscape Tablets & Small Desktops (769px to 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .right-panel {
+    width: 250px; /* Narrower to give menu panel more breathing room */
+  }
+  
+  .order-hdr {
+    padding: 10px 12px 8px;
+  }
+  
+  .order-hdr h3 {
+    font-size: 13px;
+  }
+  
+  .or-name {
+    font-size: 11px;
+  }
+  
+  .qb {
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+  }
+  
+  .qn {
+    font-size: 11px;
+    min-width: 14px;
+  }
+  
+  .or-total {
+    font-size: 11px;
+    min-width: 38px;
+  }
+  
+  .order-summary {
+    padding: 8px 12px;
+  }
+  
+  .sum-row {
+    font-size: 11px;
+  }
+  
+  .sum-row.total {
+    font-size: 14px;
+  }
+  
+  .action-btns {
+    padding: 8px 12px;
+    gap: 5px;
+  }
+  
+  .btn-cash,
+  .btn-online,
+  .btn-new {
+    padding: 8px 4px;
+    font-size: 11px;
+    border-radius: 6px;
+    gap: 3px;
+  }
+}
+
+/* 3. Portrait Tablets & iPads (481px to 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  /* Layout is column stacked. Panel width is 100%. */
+  .order-hdr {
+    padding: 14px 20px;
+  }
+  
+  .order-hdr h3 {
+    font-size: 15px;
+  }
+  
+  .order-meta {
+    font-size: 12px;
+  }
+  
+  .order-items-scroll {
+    padding: 12px 20px;
+  }
+  
+  .order-row {
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    gap: 12px;
+  }
+  
+  .order-item-emoji {
+    font-size: 18px;
+  }
+  
+  .or-name {
+    font-size: 13px;
+  }
+  
+  .or-unit {
+    font-size: 11px;
+  }
+  
+  .qb {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+  
+  .qn {
+    font-size: 13px;
+    min-width: 20px;
+  }
+  
+  .or-total {
+    font-size: 13px;
+    min-width: 50px;
+  }
+  
+  .order-summary {
+    padding: 12px 20px;
+  }
+  
+  .sum-row {
+    font-size: 13px;
+    padding: 3px 0;
+  }
+  
+  .sum-row.total {
+    font-size: 16px;
+    margin-top: 8px;
+    padding-top: 10px;
+  }
+  
+  .action-btns {
+    padding: 12px 20px;
+    gap: 10px;
+  }
+  
+  .btn-cash,
+  .btn-online,
+  .btn-new {
+    padding: 11px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+}
+
+/* 4. Mobile Screens (max-width: 480px) */
+@media (max-width: 480px) {
+  /* Layout is column stacked. Panel width is 100%. */
+  .order-hdr {
+    padding: 8px 12px;
+  }
+  
+  .order-hdr h3 {
+    font-size: 13px;
+  }
+  
+  .order-meta {
+    font-size: 10px;
+  }
+  
+  .order-tag {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  
+  .order-items-scroll {
+    padding: 6px 10px;
+  }
+  
+  .order-row {
+    padding: 6px 8px;
+    margin-bottom: 5px;
+    gap: 6px;
+  }
+  
+  .order-item-emoji {
+    font-size: 14px;
+  }
+  
+  .or-name {
+    font-size: 11.5px;
+  }
+  
+  .or-unit {
+    font-size: 9.5px;
+  }
+  
+  .qty-ctrl {
+    gap: 2px;
+  }
+  
+  .qb {
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+  }
+  
+  .qn {
+    font-size: 11.5px;
+    min-width: 14px;
+  }
+  
+  .or-total {
+    font-size: 11.5px;
+    min-width: 36px;
+  }
+  
+  .order-summary {
+    padding: 8px 12px;
+  }
+  
+  .sum-row {
+    font-size: 11px;
+    padding: 1px 0;
+  }
+  
+  .sum-row.total {
+    font-size: 13px;
+    margin-top: 4px;
+    padding-top: 6px;
+  }
+  
+  .action-btns {
+    padding: 8px 12px;
+    gap: 5px;
+  }
+  
+  .btn-cash,
+  .btn-online,
+  .btn-new {
+    padding: 8px;
+    font-size: 11px;
+    border-radius: 6px;
+    gap: 3px;
+  }
+}
+
+/* 5. Extremely Small Mobile Screens (max-width: 360px) */
+@media (max-width: 360px) {
+  .action-btns {
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  .btn-new {
+    font-size: 0 !important; /* Hide text, keep icon */
+    padding: 8px 4px;
+    flex: 0.6; /* Shrink the new order button to leave space for payment buttons */
+  }
+
+  .btn-new i {
+    font-size: 12px !important;
+  }
+
+  .btn-cash,
+  .btn-online {
+    font-size: 10px;
+    padding: 8px 2px;
+  }
+  
+  .btn-cash i,
+  .btn-online i {
+    font-size: 10px;
+  }
 }
