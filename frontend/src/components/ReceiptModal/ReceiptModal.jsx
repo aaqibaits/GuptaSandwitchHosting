@@ -281,7 +281,7 @@ const ReceiptModal = ({ data, onClose }) => {
             position: 'relative'
           }}>
             <img 
-              src={logo} 
+              src="/logo.jpeg" 
               alt="Gupta Sandwich Logo" 
               style={{ 
                 position: 'absolute', 
@@ -357,7 +357,7 @@ const ReceiptModal = ({ data, onClose }) => {
             <div className="receipt-dark-header">
               <div className="header-top-row">
                 <div className="header-left">
-                  <img src={logo} alt="Gupta Sandwich Logo" className="receipt-logo" />
+                  <img src="/logo.jpeg" alt="Gupta Sandwich Logo" className="receipt-logo" />
                 </div>
                 <div className="header-right">
                   <h2 className="receipt-outlet-name">{outletName || 'Gupta Sandwich'}</h2>
