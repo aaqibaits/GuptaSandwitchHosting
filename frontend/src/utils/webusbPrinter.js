@@ -25,7 +25,16 @@ const CMD = {
 export const requestUSBPrinter = async () => {
   try {
     const device = await navigator.usb.requestDevice({
-      filters: [] // Empty filters allows selecting any USB device (useful for generic printers)
+      filters: [
+        { classCode: 7 }, // Standard USB Printer class
+        { vendorId: 0x1a86 }, // Qinheng CH340 (very common in generic USB thermal printers)
+        { vendorId: 0x0483 }, // STMicroelectronics
+        { vendorId: 0x04b8 }, // Epson
+        { vendorId: 0x0fe6 }, // Hoin / Generic
+        { vendorId: 0x0416 }, // Winbond / Generic
+        { vendorId: 0x0dd4 }, // Star Micronics
+        { vendorId: 0x0519 }  // Star Micronics
+      ]
     });
     return device;
   } catch (error) {
