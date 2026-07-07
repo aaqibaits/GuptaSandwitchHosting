@@ -90,6 +90,23 @@
   flex-direction: column;
 }
 
+/* ── Mobile Responsive Sidebar Adjustments ── */
+@media (max-width: 768px) {
+  .sidebar {
+    padding-bottom: 64px !important;
+    overflow-y: auto;
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+  }
+  .sidebar::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome/Safari/Opera */
+  }
+  .sidebar-footer {
+    padding-bottom: 0 !important;
+    margin-top: 16px; /* Spacing fallback if screen is very short */
+  }
+}
+
 /* Footer wrapper */
 .sidebar-footer {
   margin-top: auto;
