@@ -27,7 +27,7 @@ import {
 } from '../../services/reportApi';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const STAFF_GREEN = '#16A34A';
+const STAFF_GREEN = Colors.primary;
 
 // ── Mock data per period ──────────────────────────────────────────────────────
 const PERIOD_DATA = {

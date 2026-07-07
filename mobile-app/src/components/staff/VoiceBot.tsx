@@ -1,9 +1,15 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   TouchableOpacity, Text, StyleSheet, Animated, View, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as IntentLauncher from 'expo-intent-launcher';
+import { Colors } from '../../constants/colors';
+let ExpoSpeechRecognitionModule: any = null;
+try {
+  ExpoSpeechRecognitionModule = require('expo-speech-recognition').ExpoSpeechRecognitionModule;
+} catch (e) {
+  console.warn('[VoiceBot] Native ExpoSpeechRecognitionModule not loaded. Falling back to IntentLauncher.', e);
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface VoiceBotDish {
@@ -12,6 +18,7 @@ export interface VoiceBotDish {
   price: number;
   dine_price?: number;
   parcel_price?: number;
+  emoji?: string;
 }
 
 interface VoiceBotProps {
@@ -22,6 +29,7 @@ interface VoiceBotProps {
     dine_price?: number;
     parcel_price?: number;
     qty: number;
+    emoji?: string;
   }) => void;
   showToast: (msg: string) => void;
   dishes: VoiceBotDish[];
@@ -46,8 +54,7 @@ const QUANTITY_WORDS: Record<string, number> = {
   assi: 80, nabbe: 90, sau: 100, hazaar: 1000,
   
   // Common variations
-  'twnty': 20, 'thrity': 30, 'fourty': 40, 'fifty': 50,
-  'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90,
+  'twnty': 20, 'thrity': 30, 'fourty': 40,
   'hundered': 100, 'hundread': 100, 'thousnad': 1000,
 };
 
@@ -55,7 +62,7 @@ const QUANTITY_WORDS: Record<string, number> = {
 const STOP_PHRASES = ['order complete', 'done', 'finish order', 'complete order', 'order done'];
 
 // ── Fuzzy dish match (same algorithm as web VoiceBot.jsx) ─────────────────────
-function findBestDish(text: string, dishes: VoiceBotDish[]) {
+function findBestDish(text: string, dishes: VoiceBotDish[]): VoiceBotDish | null {
   let bestMatch: VoiceBotDish | null = null;
   let bestScore = 0;
   
@@ -158,96 +165,180 @@ export default function VoiceBot({ onAddItem, showToast, dishes }: VoiceBotProps
     pulseAnim.setValue(1);
   }, [pulseAnim]);
 
-  const handlePress = useCallback(async () => {
-    if (Platform.OS !== 'android') {
-      showToast('Voice ordering only works on Android');
-      return;
-    }
-    if (listening) return;
+  // Hook up event listeners for expo-speech-recognition dynamically
+  useEffect(() => {
+    if (!ExpoSpeechRecognitionModule) return;
 
-    try {
+    const startSub = ExpoSpeechRecognitionModule.addListener('start', () => {
       setListening(true);
       startPulse();
+    });
 
-      const result = await IntentLauncher.startActivityAsync(
-        'android.speech.action.RECOGNIZE_SPEECH' as any,
-        {
-          extra: {
-            'android.speech.extra.LANGUAGE_MODEL': 'free_form',
-            'android.speech.extra.LANGUAGE': 'en-IN',
-            'android.speech.extra.PROMPT': 'Say dish name and quantity (e.g., 2 Paneer Pizza)…',
-            'android.speech.extra.MAX_RESULTS': 5,
-          },
-        } as any
-      );
-
-      if (result.resultCode === -1 && result.extra) {
-        const results = (result.extra as any)['android.speech.extra.RESULTS'] as string[];
-        const text = (results?.[0] ?? '').toLowerCase().trim();
-        console.log('[VoiceBot] Heard:', text);
-        console.log('[VoiceBot] Cleaned:', cleanDishName(text));
-
-        if (!text) return;
-
-        // Check for stop/complete commands
-        if (STOP_PHRASES.some(p => text.includes(p))) {
-          showToast('Order Completed');
-          return;
-        }
-
-        // Extract quantity first
-        const qty = extractQuantity(text);
-        console.log('[VoiceBot] Quantity:', qty);
-
-        // Clean the text to get dish name
-        const cleanedText = cleanDishName(text);
-        
-        // Try to find best matching dish
-        let match = findBestDish(cleanedText, dishes);
-        
-        // If no match with cleaned text, try with original text
-        if (!match) {
-          match = findBestDish(text, dishes);
-        }
-        
-        if (!match) {
-          showToast('Dish not found. Try saying the exact name.');
-          console.log('[VoiceBot] No match for:', cleanedText);
-          return;
-        }
-
-        console.log('[VoiceBot] Matched dish:', match.name);
-        
-        // Add items to cart
-        for (let i = 0; i < qty; i++) {
-          onAddItem({
-            id: match.id,
-            name: match.name,
-            price: match.dine_price ?? match.price,
-            dine_price: match.dine_price,
-            parcel_price: match.parcel_price,
-            qty: 1,
-          });
-        }
-        
-        // Show success toast with quantity and dish name
-        const quantityWord = qty === 1 ? '' : `${qty} × `;
-        showToast(`${quantityWord}${match.name} added`);
-      }
-    } catch (err: any) {
-      const msg = String(err?.message ?? err);
-      if (!msg.includes('cancel') && !msg.includes('CANCEL')) {
-        showToast('Voice recognition failed. Try again.');
-        console.error('[VoiceBot] Error:', err);
-      }
-    } finally {
+    const endSub = ExpoSpeechRecognitionModule.addListener('end', () => {
       setListening(false);
       stopPulse();
+    });
+
+    const errorSub = ExpoSpeechRecognitionModule.addListener('error', (event: any) => {
+      console.warn('[VoiceBot] Recognition error:', event.error, event.message);
+      setListening(false);
+      stopPulse();
+      if (event.error !== 'no-speech' && event.error !== 'aborted') {
+        showToast('Voice recognition failed. Try again.');
+      }
+    });
+
+    const resultSub = ExpoSpeechRecognitionModule.addListener('result', (event: any) => {
+      const text = (event.results[0]?.transcript ?? '').toLowerCase().trim();
+      console.log('[VoiceBot] Heard:', text);
+      if (!text || !event.isFinal) return;
+
+      // Check for stop/complete commands
+      if (STOP_PHRASES.some(p => text.includes(p))) {
+        showToast('Order Completed');
+        return;
+      }
+
+      // Extract quantity
+      const qty = extractQuantity(text);
+      console.log('[VoiceBot] Quantity:', qty);
+
+      // Clean name
+      const cleanedText = cleanDishName(text);
+
+      // Find match
+      const finalMatch = findBestDish(cleanedText, dishes) || findBestDish(text, dishes);
+
+      if (!finalMatch) {
+        showToast('Dish not found. Try saying the exact name.');
+        return;
+      }
+
+      // Add to cart
+      for (let i = 0; i < qty; i++) {
+        onAddItem({
+          id: finalMatch.id,
+          name: finalMatch.name,
+          price: finalMatch.dine_price ?? finalMatch.price,
+          dine_price: finalMatch.dine_price,
+          parcel_price: finalMatch.parcel_price,
+          qty: 1,
+          emoji: finalMatch.emoji,
+        });
+      }
+
+      const quantityWord = qty === 1 ? '' : `${qty} × `;
+      showToast(`${quantityWord}${finalMatch.name} added`);
+    });
+
+    return () => {
+      startSub.remove();
+      endSub.remove();
+      errorSub.remove();
+      resultSub.remove();
+    };
+  }, [dishes, onAddItem, showToast, startPulse, stopPulse]);
+
+  const handlePress = useCallback(async () => {
+    if (ExpoSpeechRecognitionModule) {
+      if (listening) {
+        try {
+          await ExpoSpeechRecognitionModule.stop();
+        } catch (err) {
+          console.warn('[VoiceBot] Failed to stop:', err);
+        }
+        return;
+      }
+
+      try {
+        const perms = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+        if (!perms.granted) {
+          showToast('Microphone permission required for voice ordering');
+          return;
+        }
+
+        await ExpoSpeechRecognitionModule.start({
+          lang: 'en-IN',
+          interimResults: false,
+        });
+      } catch (err) {
+        showToast('Could not start voice recognition');
+        console.error('[VoiceBot] Start error:', err);
+      }
+    } else {
+      // Fallback for Expo Go (using IntentLauncher)
+      if (Platform.OS !== 'android') {
+        showToast('Voice ordering only works on Android inside Expo Go');
+        return;
+      }
+      if (listening) return;
+
+      try {
+        setListening(true);
+        startPulse();
+
+        const IntentLauncher = require('expo-intent-launcher');
+
+        const result = await IntentLauncher.startActivityAsync(
+          'android.speech.action.RECOGNIZE_SPEECH',
+          {
+            extra: {
+              'android.speech.extra.LANGUAGE_MODEL': 'free_form',
+              'android.speech.extra.LANGUAGE': 'en-IN',
+              'android.speech.extra.PROMPT': 'Say dish name and quantity (e.g., 2 Paneer Pizza)…',
+              'android.speech.extra.MAX_RESULTS': 5,
+            },
+          }
+        );
+
+        if (result.resultCode === -1 && result.extra) {
+          const results = result.extra['android.speech.extra.RESULTS'] as string[];
+          const text = (results?.[0] ?? '').toLowerCase().trim();
+          console.log('[VoiceBot Fallback] Heard:', text);
+
+          if (!text) return;
+
+          if (STOP_PHRASES.some(p => text.includes(p))) {
+            showToast('Order Completed');
+            return;
+          }
+
+          const qty = extractQuantity(text);
+          const cleanedText = cleanDishName(text);
+          const finalMatch = findBestDish(cleanedText, dishes) || findBestDish(text, dishes);
+
+          if (!finalMatch) {
+            showToast('Dish not found. Try saying the exact name.');
+            return;
+          }
+
+          for (let i = 0; i < qty; i++) {
+            onAddItem({
+              id: finalMatch.id,
+              name: finalMatch.name,
+              price: finalMatch.dine_price ?? finalMatch.price,
+              dine_price: finalMatch.dine_price,
+              parcel_price: finalMatch.parcel_price,
+              qty: 1,
+              emoji: finalMatch.emoji,
+            });
+          }
+
+          const quantityWord = qty === 1 ? '' : `${qty} × `;
+          showToast(`${quantityWord}${finalMatch.name} added`);
+        }
+      } catch (err) {
+        showToast('Voice recognition failed. Try again.');
+        console.error('[VoiceBot Fallback] Error:', err);
+      } finally {
+        setListening(false);
+        stopPulse();
+      }
     }
   }, [listening, dishes, onAddItem, showToast, startPulse, stopPulse]);
 
-  // Android only
-  if (Platform.OS === 'ios') return null;
+  // Hide on Web
+  if (Platform.OS === 'web') return null;
 
   return (
     <View style={styles.fab} pointerEvents="box-none">
@@ -289,7 +380,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: 'rgba(22, 163, 74, 0.18)',
+    backgroundColor: 'rgba(232, 89, 12, 0.18)',
     top: -13,
     left: -13,
   },
@@ -297,27 +388,27 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#16A34A',
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#16A34A',
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.45,
     shadowRadius: 8,
     elevation: 8,
   },
   btnActive: {
-    backgroundColor: '#15803D',
+    backgroundColor: Colors.primaryMid,
     elevation: 12,
   },
   label: {
     marginTop: 4,
     fontSize: 10,
-    color: '#16A34A',
+    color: Colors.primary,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   labelActive: {
-    color: '#15803D',
+    color: Colors.primaryMid,
   },
 });

@@ -47,6 +47,7 @@ function apiToLocalOutlet(o: ApiOutlet): Outlet {
     status: o.status,
     users: (o.users ?? []).map(apiToLocalUser),
     image_url: o.image_url ?? null,
+    access_token: o.access_token || '',
   };
 }
 
@@ -57,8 +58,8 @@ function apiToLocalUser(u: ApiOutletUser): OutletUser {
     email: u.email,
     username: u.username,
     password: '',
-    roleLabel: u.role_label,
-    appRole: u.app_role,
+    roleLabel: u.roleLabel || u.role_label || '',
+    appRole: u.appRole || u.app_role || 'Staff',
     permissions: u.permissions ?? { admin: [], staff: [] },
     status: u.status,
   };
@@ -117,7 +118,7 @@ const INITIAL_OUTLETS: Outlet[] = [
   },
 ];
 
-const BLANK_OUTLET = { name: '', address: '', phone: '', manager: '', email: '', username: '', password: '', confirmPassword: '', status: 'active' as const };
+const BLANK_OUTLET = { name: '', address: '', phone: '', manager: '', email: '', username: '', password: '', confirmPassword: '', status: 'active' as const, access_token: '' };
 const BLANK_USER   = { name: '', email: '', username: '', password: '', confirmPassword: '', roleLabel: 'Cashier', appRole: 'Staff' as const, permissions: { admin: [], staff: ['pos','reports'] } as ScreenPermissions, status: 'active' as const };
 
 // ── Main component ───────────────────────────────────────────────────────────
@@ -178,7 +179,7 @@ export default function OutletsScreen() {
   // Outlet modal state
   const [showAddOutlet, setShowAddOutlet] = useState(false);
   const [editOutlet, setEditOutlet]       = useState<Outlet | null>(null);
-  const [outletForm, setOutletForm]       = useState<{ name: string; address: string; phone: string; manager: string; email: string; username: string; password: string; confirmPassword: string; status: 'active' | 'inactive' }>({ ...BLANK_OUTLET });
+  const [outletForm, setOutletForm]       = useState<{ name: string; address: string; phone: string; manager: string; email: string; username: string; password: string; confirmPassword: string; status: 'active' | 'inactive'; access_token: string }>({ ...BLANK_OUTLET });
   const [outletErrors, setOutletErrors]   = useState<Record<string, string>>({});
 
   // User modal state
@@ -198,6 +199,7 @@ export default function OutletsScreen() {
     if (!outletForm.address.trim()) e.address = 'Required';
     if (!outletForm.phone.trim())   e.phone   = 'Required';
     if (!outletForm.manager.trim()) e.manager = 'Required';
+    if (!outletForm.access_token || !outletForm.access_token.trim()) e.access_token = 'Required';
     if (!outletForm.username.trim()) e.username = 'Required';
     if (!isEdit || outletForm.password) {
       if (!outletForm.password)                                          e.password = 'Required';
@@ -219,6 +221,7 @@ export default function OutletsScreen() {
         email: outletForm.email,
         username: outletForm.username,
         password: outletForm.password,
+        access_token: outletForm.access_token,
       });
       
       let localOutlet = apiToLocalOutlet(res.outlet);
@@ -253,6 +256,7 @@ export default function OutletsScreen() {
         email: outletForm.email,
         username: outletForm.username,
         status: outletForm.status,
+        access_token: outletForm.access_token,
       });
       
       let localOutlet = apiToLocalOutlet(res.outlet);
@@ -352,8 +356,8 @@ export default function OutletsScreen() {
         email: userForm.email,
         username: userForm.username,
         password: userForm.password,
-        role_label: userForm.roleLabel,
-        app_role: userForm.appRole,
+        roleLabel: userForm.roleLabel,
+        appRole: userForm.appRole,
         permissions: userForm.permissions,
       });
       const newUser = apiToLocalUser(res.user);
@@ -374,8 +378,8 @@ export default function OutletsScreen() {
         name: userForm.name,
         email: userForm.email,
         username: userForm.username,
-        role_label: userForm.roleLabel,
-        app_role: userForm.appRole,
+        roleLabel: userForm.roleLabel,
+        appRole: userForm.appRole,
         permissions: userForm.permissions,
         status: userForm.status,
         ...(userForm.password ? { password: userForm.password } : {}),
@@ -530,7 +534,7 @@ export default function OutletsScreen() {
             <View style={styles.outletActions}>
               <TouchableOpacity
                 style={styles.outlineBtn}
-                onPress={() => { setEditOutlet(o); setOutletForm({ ...o, password: '', confirmPassword: '' }); setOutletErrors({}); setSelectedImageUri(o.image_url ? `${BASE_URL}${o.image_url}` : null); }}
+                onPress={() => { setEditOutlet(o); setOutletForm({ ...o, password: '', confirmPassword: '', access_token: o.access_token || '' }); setOutletErrors({}); setSelectedImageUri(o.image_url ? `${BASE_URL}${o.image_url}` : null); }}
               >
                 <Ionicons name="pencil-outline" size={14} color={Colors.text} style={{ marginRight: 4 }} />
                 <Text style={styles.outlineBtnText}>Edit</Text>
@@ -588,6 +592,7 @@ export default function OutletsScreen() {
               <FormInput label="Address *"        value={outletForm.address}  error={outletErrors.address}  onChangeText={v => { setOutletForm(f => ({...f, address: v}));  setOutletErrors(e => ({...e, address: ''})); }} placeholder="Full address with pin" multiline />
               <FormInput label="Phone *"          value={outletForm.phone}    error={outletErrors.phone}    onChangeText={v => { setOutletForm(f => ({...f, phone: v}));    setOutletErrors(e => ({...e, phone: ''})); }}   placeholder="10-digit number" keyboardType="phone-pad" />
               <FormInput label="Manager name *"   value={outletForm.manager}  error={outletErrors.manager}  onChangeText={v => { setOutletForm(f => ({...f, manager: v}));  setOutletErrors(e => ({...e, manager: ''})); }} placeholder="Full name" />
+              <FormInput label="Access Token *"   value={outletForm.access_token} error={outletErrors.access_token} onChangeText={v => { setOutletForm(f => ({...f, access_token: v})); setOutletErrors(e => ({...e, access_token: ''})); }} placeholder="Enter Access Token" />
               <FormInput label="Email"            value={outletForm.email}    onChangeText={v => setOutletForm(f => ({...f, email: v}))}    placeholder="outlet@guptasandwich.in" keyboardType="email-address" />
               <FormInput label="Username / ID *"  value={outletForm.username} error={outletErrors.username} onChangeText={v => { setOutletForm(f => ({...f, username: v})); setOutletErrors(e => ({...e, username: ''})); }} placeholder="e.g. outlet_kp" />
               <FormInput label="Password *"       value={outletForm.password} error={outletErrors.password} onChangeText={v => { setOutletForm(f => ({...f, password: v})); setOutletErrors(e => ({...e, password: ''})); }} placeholder="Min 6 chars" secureTextEntry={!showPass.o} eyeToggle={() => togglePass('o')} showPass={showPass.o} />

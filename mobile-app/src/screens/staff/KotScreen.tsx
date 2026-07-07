@@ -22,8 +22,9 @@ import { FontSize, FontWeight } from '../../constants/typography';
 import { useStaffOrder } from '../../context/StaffOrderContext';
 import { OrderStatus, KotOrder } from '../../types';
 import EmptyState from '../../components/common/EmptyState';
+import { printCustomerReceipt, printKotReceipt } from '../../services/printService';
 
-const STAFF_GREEN = '#16A34A';
+const STAFF_GREEN = Colors.primary;
 
 type FilterStatus = 'All' | OrderStatus;
 const FILTERS: FilterStatus[] = ['All', 'pending', 'preparing', 'ready', 'dispatched'];
@@ -45,7 +46,7 @@ function timeAgo(date: Date): string {
 }
 
 function KotCard({ kot }: { kot: KotOrder }) {
-  const { updateKotStatus, toggleItemReady, markAllKotItemsReady, toggleUrgent, cancelKotOrder } = useStaffOrder();
+  const { updateKotStatus, toggleItemReady, markAllKotItemsReady, toggleUrgent, cancelKotOrder, outletName, staffName } = useStaffOrder();
   const cfg = STATUS_CONFIG[kot.status] ?? STATUS_CONFIG.pending;
   const allItemsReady = kot.items.every(i => kot.itemStatuses[i.id] === 'ready');
   const readyCount = kot.items.filter(i => kot.itemStatuses[i.id] === 'ready').length;
@@ -65,6 +66,37 @@ function KotCard({ kot }: { kot: KotOrder }) {
           text: 'Cancel Order',
           style: 'destructive',
           onPress: () => cancelKotOrder(kot.orderId!),
+        },
+      ]
+    );
+  };
+
+  const handlePrintPress = () => {
+    Alert.alert(
+      'Print Receipt',
+      `Select print option for ${kot.kotNumber}`,
+      [
+        {
+          text: 'Print Customer Bill',
+          onPress: async () => {
+            const res = await printCustomerReceipt(kot, outletName, staffName);
+            if (!res.success) {
+              Alert.alert('Error', 'Failed to print customer bill.');
+            }
+          },
+        },
+        {
+          text: 'Print Kitchen KOT',
+          onPress: async () => {
+            const res = await printKotReceipt(kot, staffName);
+            if (!res.success) {
+              Alert.alert('Error', 'Failed to print kitchen KOT.');
+            }
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
         },
       ]
     );
@@ -221,6 +253,19 @@ function KotCard({ kot }: { kot: KotOrder }) {
               </TouchableOpacity>
             )}
 
+            {/* Print action — always available */}
+            <TouchableOpacity
+              style={styles.printBtn}
+              onPress={handlePrintPress}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="print-outline"
+                size={16}
+                color={Colors.primary}
+              />
+            </TouchableOpacity>
+
             {/* Main Action: Dispatch Full Order (if ready) OR Mark All Ready (if pending/preparing) */}
             {kot.status !== 'dispatched' && kot.status !== 'cancelled' && (
               isKotReady ? (
@@ -271,7 +316,7 @@ export default function KotScreen() {
     { key: 'All',       label: 'Active Orders', icon: 'clipboard-outline',     iconLib: 'Ionicons',     bg: '#F8FAFC', numColor: Colors.text },
     { key: 'pending',   label: 'Pending',       icon: 'time-outline',           iconLib: 'Ionicons',     bg: '#FFF7ED', numColor: '#C2410C' },
     { key: 'preparing', label: 'Preparing',     icon: 'restaurant-outline',     iconLib: 'Ionicons',     bg: '#EFF6FF', numColor: '#1D4ED8' },
-    { key: 'ready',     label: 'Ready',         icon: 'checkmark-circle-outline', iconLib: 'Ionicons',  bg: '#F0FDF4', numColor: STAFF_GREEN },
+    { key: 'ready',     label: 'Ready',         icon: 'checkmark-circle-outline', iconLib: 'Ionicons',  bg: Colors.primaryLight, numColor: STAFF_GREEN },
     { key: 'dispatched', label: 'Dispatched',    icon: 'rocket-outline',         iconLib: 'Ionicons',     bg: '#F5F3FF', numColor: '#7C3AED' },
   ];
 
@@ -416,14 +461,14 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border,
     marginRight: 8,
   },
-  filterPillActive: { backgroundColor: '#F0FDF4', borderColor: STAFF_GREEN },
+  filterPillActive: { backgroundColor: Colors.primaryLight, borderColor: STAFF_GREEN },
   filterText: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: FontWeight.medium },
   filterTextActive: { color: STAFF_GREEN, fontWeight: FontWeight.bold },
   filterBadge: {
     backgroundColor: Colors.border,
     borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1,
   },
-  filterBadgeActive: { backgroundColor: '#DCFCE7' },
+  filterBadgeActive: { backgroundColor: Colors.primaryLight },
   filterBadgeText: { fontSize: 10, color: Colors.textMuted, fontWeight: FontWeight.bold },
 
   listContainer: { flex: 1 },
@@ -520,6 +565,11 @@ const styles = StyleSheet.create({
   progressText: { fontSize: 10, color: Colors.textMuted, fontWeight: FontWeight.bold, minWidth: 42 },
 
   urgentBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: Colors.bg, borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  printBtn: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: Colors.bg, borderWidth: 1, borderColor: Colors.border,
     alignItems: 'center', justifyContent: 'center',

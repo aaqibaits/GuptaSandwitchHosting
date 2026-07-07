@@ -27,7 +27,15 @@
     "web": {
       "favicon": "./assets/icon.png"
     },
-    "plugins": [],
+    "plugins": [
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone.",
+          "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to securely recognize user speech."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "07f8e994-30d1-4abe-9054-dc644dcfa4bf"

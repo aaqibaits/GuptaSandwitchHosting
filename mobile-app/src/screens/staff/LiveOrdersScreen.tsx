@@ -11,7 +11,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, FlatList, TextInput, Dimensions,
+  StyleSheet, FlatList, TextInput, Dimensions, Alert,
 } from 'react-native';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
@@ -19,9 +19,10 @@ import { FontSize, FontWeight } from '../../constants/typography';
 import { LiveOrder, LiveOrderStatus, Platform as OrderPlatform } from '../../types';
 import { DEFAULT_MENU_ITEMS } from '../../constants/menu';
 import { useStaffOrder } from '../../context/StaffOrderContext';
+import { printLiveOrderReceipt } from '../../services/printService';
 
 
-const STAFF_GREEN  = '#16A34A';
+const STAFF_GREEN = Colors.primary;
 const SWIGGY_COLOR = '#FF5200';
 const ZOMATO_COLOR = '#E23744';
 const { width: W } = Dimensions.get('window');
@@ -33,7 +34,7 @@ const STAT_CARDS = [
   { key: 'total',     label: 'Total Orders', iconName: 'clipboard-outline',       bg: '#F1F5F9', numColor: '#0F172A' },
   { key: 'pending',   label: 'Pending',      iconName: 'time-outline',             bg: '#FFF7ED', numColor: '#C2410C' },
   { key: 'preparing', label: 'Preparing',    iconName: 'restaurant-outline',       bg: '#EFF6FF', numColor: '#1D4ED8' },
-  { key: 'ready',     label: 'Ready',        iconName: 'checkmark-circle-outline', bg: '#F0FDF4', numColor: STAFF_GREEN },
+  { key: 'ready',     label: 'Ready',        iconName: 'checkmark-circle-outline', bg: Colors.primaryLight, numColor: STAFF_GREEN },
   { key: 'completed', label: 'Completed',    iconName: 'rocket-outline',           bg: '#F5F3FF', numColor: '#7C3AED' },
 ];
 
@@ -96,7 +97,7 @@ const ORDER_STATUS_CFG: Record<LiveOrderStatus, { label: string; iconName: strin
   pending:   { label: 'New Order', iconName: 'notifications-outline',  color: '#C2410C', bg: '#FFEDD5' },
   accepted:  { label: 'Accepted',  iconName: 'checkmark-circle-outline', color: '#1D4ED8', bg: '#DBEAFE' },
   preparing: { label: 'Preparing', iconName: 'restaurant-outline',      color: '#9333EA', bg: '#F3E8FF' },
-  ready:     { label: 'Ready',     iconName: 'rocket-outline',           color: STAFF_GREEN, bg: '#DCFCE7' },
+  ready:     { label: 'Ready',     iconName: 'rocket-outline',           color: STAFF_GREEN, bg: Colors.primaryLight },
   picked_up: { label: 'Picked Up', iconName: 'bicycle-outline',         color: '#6B7280', bg: '#F3F4F6' },
 };
 
@@ -148,7 +149,7 @@ const CAT_EMOJI: Record<string, string> = {
 // Main screen
 // ─────────────────────────────────────────────────────────────────────────────
 export default function LiveOrdersScreen() {
-  const { kotOrders } = useStaffOrder();
+  const { kotOrders, outletName, staffName } = useStaffOrder();
 
   // ── KOT stats ──────────────────────────────────────────────────────────────
   const stats = {
@@ -283,6 +284,23 @@ export default function LiveOrdersScreen() {
             </View>
           </View>
           <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={styles.printBtn}
+              onPress={async () => {
+                const res = await printLiveOrderReceipt(order, outletName, staffName);
+                if (!res.success) {
+                  Alert.alert('Error', 'Failed to print order receipt.');
+                }
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="print-outline"
+                size={16}
+                color={Colors.primary}
+              />
+            </TouchableOpacity>
+
             {order.status === 'pending' && (
               <TouchableOpacity style={styles.rejectBtn} onPress={() => rejectOrder(order.id)} activeOpacity={0.8}>
                 <Ionicons name="close-circle-outline" size={14} color={Colors.red} style={{ marginRight: 4 }} />
@@ -316,13 +334,13 @@ export default function LiveOrdersScreen() {
   // ── Render menu item card ──────────────────────────────────────────────────
   const renderMenuItem = ({ item }: { item: typeof DEFAULT_MENU_ITEMS[0] }) => (
     <View style={styles.menuCard}>
-      <View style={[styles.vegDot, { backgroundColor: item.veg ? STAFF_GREEN : '#EF4444' }]} />
+      <View style={[styles.vegDot, { backgroundColor: item.veg ? Colors.green : '#EF4444' }]} />
       <MaterialIcons name="restaurant" size={24} color={Colors.textMuted} />
       <Text style={styles.menuName} numberOfLines={2}>{item.name}</Text>
       <View style={styles.menuFooterRow}>
         <Text style={styles.menuPrice}>₹{item.price}</Text>
-        <View style={[styles.vegBadge, { backgroundColor: item.veg ? '#F0FDF4' : '#FEF2F2' }]}>
-          <Text style={[styles.vegBadgeText, { color: item.veg ? STAFF_GREEN : '#EF4444' }]}>
+        <View style={[styles.vegBadge, { backgroundColor: item.veg ? Colors.greenLight : '#FEF2F2' }]}>
+          <Text style={[styles.vegBadgeText, { color: item.veg ? Colors.green : '#EF4444' }]}>
             {item.veg ? 'VEG' : 'N-VEG'}
           </Text>
         </View>
@@ -567,7 +585,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
     borderWidth: 1.5, borderColor: Colors.border,
   },
-  tabBtnActive: { backgroundColor: '#F0FDF4', borderColor: STAFF_GREEN },
+  tabBtnActive: { backgroundColor: Colors.primaryLight, borderColor: STAFF_GREEN },
   tabBtnText: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.textMuted },
   tabBtnTextActive: { color: STAFF_GREEN, fontWeight: FontWeight.bold },
   tabBadge: {
@@ -666,6 +684,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10,
     backgroundColor: '#FEE2E2', borderWidth: 1, borderColor: '#FCA5A5',
   },
+  printBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: Colors.bg, borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
   rejectText: { fontSize: FontSize.xs, color: Colors.red, fontWeight: FontWeight.bold },
   acceptBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
   acceptText: { fontSize: FontSize.xs, color: '#fff', fontWeight: FontWeight.bold },
@@ -690,7 +713,7 @@ const styles = StyleSheet.create({
     borderRadius: 20, backgroundColor: Colors.surface,
     borderWidth: 1.5, borderColor: Colors.border,
   },
-  catPillActive: { backgroundColor: '#F0FDF4', borderColor: STAFF_GREEN },
+  catPillActive: { backgroundColor: Colors.primaryLight, borderColor: STAFF_GREEN },
   catEmoji: { fontSize: 13 },
   catText: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: FontWeight.semibold },
   catTextActive: { color: STAFF_GREEN, fontWeight: FontWeight.bold },

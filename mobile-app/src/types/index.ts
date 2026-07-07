@@ -52,10 +52,11 @@ export interface Outlet {
   manager: string;
   email: string;
   username: string;
-  password: string;
+  password?: string;
   status: 'active' | 'inactive';
   users: OutletUser[];
   image_url?: string | null;
+  access_token?: string;
 }
 
 // ── Accounting ──────────────────────────────────────────────────────────────

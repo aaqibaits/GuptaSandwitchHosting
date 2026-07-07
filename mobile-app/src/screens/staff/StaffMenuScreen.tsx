@@ -24,7 +24,7 @@ import { FontSize, FontWeight } from '../../constants/typography';
 import { getAvailableDishes, PosDish } from '../../services/posApi';
 import { BASE_URL } from '../../services/api';
 
-const STAFF_GREEN = '#16A34A';
+const STAFF_GREEN = Colors.primary;
 const { width: W } = Dimensions.get('window');
 
 // ── Dish card ─────────────────────────────────────────────────────────────────

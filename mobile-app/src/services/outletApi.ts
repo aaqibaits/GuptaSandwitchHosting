@@ -26,8 +26,10 @@ export interface ApiOutletUser {
   name: string;
   email: string;
   username: string;
-  role_label: string;
-  app_role: 'Admin' | 'Staff';
+  role_label?: string;
+  roleLabel?: string;
+  app_role?: 'Admin' | 'Staff';
+  appRole?: 'Admin' | 'Staff';
   permissions: { admin: string[]; staff: string[] };
   status: 'active' | 'inactive';
 }
@@ -43,6 +45,7 @@ export interface ApiOutlet {
   status: 'active' | 'inactive';
   users: ApiOutletUser[];
   image_url: string | null;
+  access_token?: string;
 }
 
 export interface DashboardStats {
@@ -64,6 +67,7 @@ export interface AddOutletPayload {
   email?: string;
   username: string;
   password: string;
+  access_token: string;
 }
 
 export interface UpdateOutletPayload {
@@ -74,6 +78,7 @@ export interface UpdateOutletPayload {
   email?: string;
   username?: string;
   status?: 'active' | 'inactive';
+  access_token?: string;
 }
 
 export interface UpdateOutletCredsPayload {
@@ -86,8 +91,8 @@ export interface AddUserPayload {
   email?: string;
   username: string;
   password: string;
-  role_label: string;
-  app_role: 'Admin' | 'Staff';
+  roleLabel: string;
+  appRole: 'Admin' | 'Staff';
   permissions: { admin: string[]; staff: string[] };
 }
 
@@ -96,8 +101,8 @@ export interface UpdateUserPayload {
   email?: string;
   username?: string;
   password?: string;
-  role_label?: string;
-  app_role?: 'Admin' | 'Staff';
+  roleLabel?: string;
+  appRole?: 'Admin' | 'Staff';
   permissions?: { admin: string[]; staff: string[] };
   status?: 'active' | 'inactive';
 }

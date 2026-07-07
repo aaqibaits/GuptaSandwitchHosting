@@ -25,8 +25,8 @@ interface StaffTopBarProps {
   onLogout?: () => void;
 }
 
-const STAFF_GREEN = '#16A34A';
-const STAFF_GREEN_LIGHT = '#DCFCE7';
+const STAFF_GREEN = Colors.primary;
+const STAFF_GREEN_LIGHT = Colors.primaryLight;
 
 export default function StaffTopBar({
   title,

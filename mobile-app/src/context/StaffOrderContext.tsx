@@ -52,6 +52,10 @@ interface StaffOrderContextValue {
   markAllKotItemsReady: (kotId: string) => Promise<void>;
   toggleUrgent: (kotId: string) => void;
   cancelKotOrder: (orderId: number) => Promise<void>;
+  
+  // Outlet details
+  outletName?: string;
+  staffName?: string;
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
@@ -150,7 +154,7 @@ const SEED_KOTS: KotOrder[] = [
 let kotCounter = 6; // start after seeded ones
 
 // ── Provider ──────────────────────────────────────────────────────────────────
-export function StaffOrderProvider({ children, outletId }: { children: ReactNode; outletId?: number }) {
+export function StaffOrderProvider({ children, outletId, outletName, userEmail }: { children: ReactNode; outletId?: number; outletName?: string; userEmail?: string }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState<OrderType>('dine-in');
   const [tableLabel, setTableLabel] = useState('Table 1');
@@ -437,12 +441,15 @@ export function StaffOrderProvider({ children, outletId }: { children: ReactNode
     }
   }, [refreshKots]);
 
+  const staffName = userEmail ? userEmail.split('@')[0].replace(/^\w/, (c) => c.toUpperCase()) : 'Pavan';
+
   return (
     <StaffOrderContext.Provider value={{
       cart, orderType, tableLabel, paymentMethod,
       setOrderType: setOrderTypeAndSyncPrices, setTableLabel, setPaymentMethod,
       addToCart, removeFromCart, updateQty, clearCart,
       kotOrders, loading, refreshKots, placeOrder, updateKotStatus, toggleItemReady, markAllKotItemsReady, toggleUrgent, cancelKotOrder,
+      outletName, staffName,
     }}>
       {children}
     </StaffOrderContext.Provider>

@@ -12,7 +12,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, TextInput, FlatList, Modal,
+  StyleSheet, TextInput, FlatList, Modal, Alert,
   Dimensions, KeyboardAvoidingView, Platform, SafeAreaView,
   Image,
 } from 'react-native';
@@ -21,13 +21,14 @@ import { Colors } from '../../constants/colors';
 import { FontSize, FontWeight } from '../../constants/typography';
 import { DEFAULT_MENU_ITEMS } from '../../constants/menu';
 import { useStaffOrder } from '../../context/StaffOrderContext';
-import { OrderType, PaymentMethod } from '../../types';
+import { OrderType, PaymentMethod, KotOrder } from '../../types';
 import { getAvailableDishes, createOrder, PosDish } from '../../services/posApi';
 import { ApiError, BASE_URL } from '../../services/api';
 import VoiceBot from '../../components/staff/VoiceBot';
+import { printCustomerReceipt, printKotReceipt } from '../../services/printService';
 
 const { width: W } = Dimensions.get('window');
-const STAFF_GREEN = '#16A34A';
+const STAFF_GREEN = Colors.primary;
 
 const PAYMENT_METHODS: PaymentMethod[] = ['Cash', 'UPI', 'Card', 'Online'];
 
@@ -63,7 +64,7 @@ export default function PosScreen() {
     cart, orderType, tableLabel, paymentMethod,
     setOrderType, setTableLabel, setPaymentMethod,
     addToCart, removeFromCart, updateQty, placeOrder,
-    clearCart, refreshKots,
+    clearCart, refreshKots, outletName, staffName,
   } = useStaffOrder();
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS as MenuItem[]);
@@ -78,6 +79,8 @@ export default function PosScreen() {
   const [lastKot, setLastKot] = useState('');
   const [showCart, setShowCart] = useState(false);
   const [placing, setPlacing] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [placedOrder, setPlacedOrder] = useState<KotOrder | null>(null);
 
   // Fullscreen image viewer state
   const [selectedImage, setSelectedImage] = useState<{ url: string; name: string; emoji: string } | null>(null);
@@ -153,6 +156,12 @@ export default function PosScreen() {
       type: discountType,
       value: parseFloat(discountValue) || 0,
     };
+    
+    // Save current cart and price state before clearing cart
+    const itemsToPrint = [...cart];
+    const subtotalToPrint = subtotal;
+    const totalToPrint = total;
+
     try {
       // Try real API first
       const res = await createOrder({
@@ -164,18 +173,38 @@ export default function PosScreen() {
       });
       const kotNumber = res.kot?.kot_number ?? `K${Date.now()}`;
       setLastKot(kotNumber);
+      
+      const finalKotOrder: KotOrder = {
+        id: res.kot ? String(res.kot.id) : `KOT-${Date.now()}`,
+        orderId: res.order ? Number(res.order.id) : undefined,
+        orderNumber: res.order?.order_number,
+        kotNumber: kotNumber,
+        orderType: orderType as OrderType,
+        tableLabel: tableLabel || (orderType === 'dine-in' ? 'Table' : 'Parcel'),
+        items: itemsToPrint,
+        status: 'pending',
+        isUrgent: false,
+        paymentMethod: paymentMethod,
+        subtotal: subtotalToPrint,
+        gst: 0,
+        total: totalToPrint,
+        createdAt: new Date(),
+        itemStatuses: Object.fromEntries(itemsToPrint.map(c => [c.id, 'pending'])),
+      };
+      setPlacedOrder(finalKotOrder);
+
       clearCart();
       refreshKots();
     } catch {
       // Fallback: use local context only
       const kot = placeOrder(discountPayload);
       setLastKot(kot.kotNumber);
+      setPlacedOrder(kot);
     } finally {
       setDiscountValue('');
       setDiscountType('pct');
       setShowCart(false);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      setShowSuccessModal(true);
       setPlacing(false);
     }
   };
@@ -312,40 +341,64 @@ export default function PosScreen() {
                 parcel_price: item.parcel_price,
                 image_url: item.image_url,
               })}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
-              {/* Dish Image / Fallback Emoji */}
-              {item.image_url ? (
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() => setSelectedImage({ url: `${BASE_URL}${item.image_url}`, name: item.name, emoji: item.emoji })}
-                  style={styles.menuImageContainer}
-                >
-                  <Image
-                    source={{ uri: `${BASE_URL}${item.image_url}` }}
-                    style={styles.menuImage}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.menuEmojiPlaceholder}>
-                  <Ionicons name="fast-food-outline" size={32} color={STAFF_GREEN} />
-                </View>
-              )}
+              {/* Image / placeholder with floating overlays */}
+              <View style={styles.menuImageWrap}>
+                {item.image_url ? (
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => setSelectedImage({ url: `${BASE_URL}${item.image_url}`, name: item.name, emoji: item.emoji })}
+                  >
+                    <Image
+                      source={{ uri: `${BASE_URL}${item.image_url}` }}
+                      style={styles.menuImage}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.menuEmojiPlaceholder}>
+                    <Ionicons name="fast-food-outline" size={30} color={STAFF_GREEN} />
+                  </View>
+                )}
 
-              <Text style={styles.menuName} numberOfLines={2}>{item.name}</Text>
-              <View style={styles.menuFooter}>
-                <Text style={styles.menuPrice}>₹{item.price}</Text>
+                {/* Price chip floating on the image */}
+                <View style={styles.priceChip}>
+                  <Text style={styles.priceChipText}>₹{item.price}</Text>
+                </View>
+
+                {/* Qty stepper / Add control floating top-right */}
                 {inCart ? (
-                  <View style={styles.menuBadge}>
-                    <Text style={styles.menuBadgeText}>{inCart.qty}</Text>
+                  <View style={styles.qtyFloating}>
+                    <TouchableOpacity
+                      style={styles.qtyFloatingBtn}
+                      onPress={(e) => { e.stopPropagation?.(); updateQty(item.id, -1); }}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <Ionicons
+                        name={inCart.qty === 1 ? 'trash-outline' : 'remove'}
+                        size={13}
+                        color="#fff"
+                      />
+                    </TouchableOpacity>
+                    <Text style={styles.qtyFloatingNum}>{inCart.qty}</Text>
+                    <TouchableOpacity
+                      style={styles.qtyFloatingBtn}
+                      onPress={(e) => { e.stopPropagation?.(); updateQty(item.id, 1); }}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <Ionicons name="add" size={13} color="#fff" />
+                    </TouchableOpacity>
                   </View>
                 ) : (
-                  <View style={styles.addBtn}>
-                    <Ionicons name="add" size={14} color="#fff" />
+                  <View style={styles.addFab}>
+                    <Ionicons name="add" size={16} color="#fff" />
                   </View>
                 )}
               </View>
+
+              <Text style={styles.menuName} numberOfLines={2}>{item.name}</Text>
+              <Text style={styles.menuCat} numberOfLines={1}>{item.cat}</Text>
             </TouchableOpacity>
           );
         }}
@@ -379,13 +432,88 @@ export default function PosScreen() {
         </TouchableOpacity>
       )}
 
-      {/* ── Success toast ────────────────────────────────────────────── */}
-      {showSuccess && (
-        <View style={styles.toast}>
-          <Ionicons name="checkmark-circle" size={18} color="#22C55E" style={{ marginRight: 6 }} />
-          <Text style={styles.toastText}>KOT {lastKot} sent to kitchen!</Text>
+      {/* ── Success Modal ────────────────────────────────────────────── */}
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSuccessModal(false)}
+      >
+        <View style={styles.successOverlay}>
+          <View style={styles.successContent}>
+            <View style={styles.successIconBg}>
+              <Ionicons name="checkmark" size={32} color="#fff" />
+            </View>
+            
+            <Text style={styles.successTitle}>Order Placed!</Text>
+            <Text style={styles.successSubtitle}>KOT {lastKot} has been sent to the kitchen.</Text>
+            
+            {placedOrder && (
+              <View style={styles.successDetailsBox}>
+                <View style={styles.successDetailsRow}>
+                  <Text style={styles.successDetailsLabel}>Total Amount:</Text>
+                  <Text style={styles.successDetailsVal}>₹{placedOrder.total}</Text>
+                </View>
+                <View style={styles.successDetailsRow}>
+                  <Text style={styles.successDetailsLabel}>Order Type:</Text>
+                  <Text style={[styles.successDetailsVal, { textTransform: 'capitalize' }]}>{placedOrder.orderType}</Text>
+                </View>
+                {placedOrder.orderType === 'dine-in' && (
+                  <View style={styles.successDetailsRow}>
+                    <Text style={styles.successDetailsLabel}>Table:</Text>
+                    <Text style={styles.successDetailsVal}>{placedOrder.tableLabel}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            <View style={styles.successActions}>
+              <TouchableOpacity
+                style={[styles.successBtn, styles.printCustomerBtn]}
+                onPress={async () => {
+                  if (placedOrder) {
+                    const res = await printCustomerReceipt(placedOrder, outletName, staffName);
+                    if (!res.success) {
+                      Alert.alert('Error', 'Failed to print customer receipt.');
+                    }
+                  }
+                }}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="print-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.successBtnText}>Print Bill</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.successBtn, styles.printKotBtn]}
+                onPress={async () => {
+                  if (placedOrder) {
+                    const res = await printKotReceipt(placedOrder, staffName);
+                    if (!res.success) {
+                      Alert.alert('Error', 'Failed to print kitchen KOT.');
+                    }
+                  }
+                }}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="restaurant-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.successBtnText}>Print KOT</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.successCloseBtn}
+              onPress={() => {
+                setShowSuccessModal(false);
+                setPlacedOrder(null);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.successCloseBtnText}>Done</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      )}
+      </Modal>
 
       {/* ── Voice toast ──────────────────────────────────────────────── */}
       {voiceToast && (
@@ -448,23 +576,17 @@ export default function PosScreen() {
                   <Text style={styles.emptyCartSub}>Tap items on the menu to add them</Text>
                 </View>
               ) : (
-                cart.map((item, idx) => (
-                  <View
-                    key={item.id}
-                    style={[
-                      styles.cartRow,
-                      idx === cart.length - 1 && { borderBottomWidth: 0 },
-                    ]}
-                  >
-                    {/* Emoji */}
+                cart.map((item) => (
+                  <View key={item.id} style={styles.cartCard}>
+                    {/* Emoji / icon */}
                     <View style={styles.cartEmojiBox}>
-                      <Ionicons name="fast-food-outline" size={20} color={Colors.textMuted} />
+                      <Ionicons name="fast-food-outline" size={18} color={STAFF_GREEN} />
                     </View>
 
                     {/* Name + unit price */}
                     <View style={styles.cartInfo}>
                       <Text style={styles.cartItemName} numberOfLines={2}>{item.name}</Text>
-                      <Text style={styles.cartItemPrice}>₹{item.price} × {item.qty}</Text>
+                      <Text style={styles.cartItemPrice}>₹{item.price} each</Text>
                     </View>
 
                     {/* Qty stepper */}
@@ -646,9 +768,9 @@ const styles = StyleSheet.create({
     borderRadius: 20, backgroundColor: Colors.bg,
     borderWidth: 1, borderColor: Colors.border, marginRight: 6,
   },
-  tablePillActive: { backgroundColor: '#E0F2FE', borderColor: '#0EA5E9' },
+  tablePillActive: { backgroundColor: Colors.primaryLight, borderColor: Colors.primary },
   tablePillText: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: FontWeight.medium },
-  tablePillTextActive: { color: '#0369A1', fontWeight: FontWeight.bold },
+  tablePillTextActive: { color: Colors.primary, fontWeight: FontWeight.bold },
 
   payScroll: { height: 36 },
   payScrollContent: { alignItems: 'center' },
@@ -657,7 +779,7 @@ const styles = StyleSheet.create({
     borderRadius: 20, backgroundColor: Colors.bg,
     borderWidth: 1, borderColor: Colors.border, marginRight: 6,
   },
-  payPillActive: { backgroundColor: '#F0FDF4', borderColor: STAFF_GREEN },
+  payPillActive: { backgroundColor: Colors.primaryLight, borderColor: STAFF_GREEN },
   payPillText: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: FontWeight.medium },
   payPillTextActive: { color: STAFF_GREEN, fontWeight: FontWeight.bold },
 
@@ -709,26 +831,86 @@ const styles = StyleSheet.create({
   // ── Menu grid
   menuList: { flex: 1 },
   menuGrid: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 100 },
+
+  // Dish card — image-forward, floating price/qty badges
   menuCard: {
-    flex: 1, backgroundColor: Colors.surface,
-    borderRadius: 12, padding: 12,
-    borderWidth: 1, borderColor: Colors.border,
-    marginBottom: 10,
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  menuCardActive: { borderColor: STAFF_GREEN, borderWidth: 2 },
-  menuEmoji: { fontSize: 28, marginBottom: 6 },
-  menuName: { fontSize: FontSize.xs, color: Colors.text, fontWeight: FontWeight.medium, marginBottom: 8, lineHeight: 16 },
-  menuFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  menuPrice: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.text },
-  menuBadge: {
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: STAFF_GREEN, alignItems: 'center', justifyContent: 'center',
+  menuCardActive: {
+    borderColor: STAFF_GREEN,
+    shadowColor: STAFF_GREEN,
+    shadowOpacity: 0.16,
   },
-  menuBadgeText: { fontSize: 11, color: '#fff', fontWeight: FontWeight.bold },
-  addBtn: {
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: Colors.dark, alignItems: 'center', justifyContent: 'center',
+  menuImageWrap: {
+    width: '100%',
+    height: 110,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: Colors.bg,
+    marginBottom: 8,
   },
+  menuImage: { width: '100%', height: '100%' },
+  menuEmojiPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  priceChip: {
+    position: 'absolute',
+    left: 8,
+    bottom: 8,
+    backgroundColor: 'rgba(15,23,42,0.78)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  priceChipText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  addFab: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: STAFF_GREEN,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  qtyFloating: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15,23,42,0.85)',
+    borderRadius: 14,
+    paddingHorizontal: 4,
+    paddingVertical: 3,
+    gap: 6,
+  },
+  qtyFloatingBtn: { width: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
+  qtyFloatingNum: { color: '#fff', fontSize: 12, fontWeight: '700', minWidth: 14, textAlign: 'center' },
+
+  menuName: { fontSize: FontSize.xs, color: Colors.text, fontWeight: FontWeight.semibold, paddingHorizontal: 2 },
+  menuCat: { fontSize: 10, color: Colors.textMuted, paddingHorizontal: 2, marginTop: 2, textTransform: 'capitalize' },
 
   // ── Cart FAB
   cartFab: {
@@ -765,6 +947,113 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
   },
   toastText: { color: '#fff', fontSize: FontSize.sm, fontWeight: FontWeight.medium, flex: 1 },
+
+  // ── Success Modal Styles
+  successOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  successContent: {
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 340,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  successIconBg: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: STAFF_GREEN,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.bold,
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  successSubtitle: {
+    fontSize: FontSize.sm,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  successDetailsBox: {
+    backgroundColor: Colors.bg,
+    borderRadius: 10,
+    width: '100%',
+    padding: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  successDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  successDetailsLabel: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+  },
+  successDetailsVal: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+    color: Colors.text,
+  },
+  successActions: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    marginBottom: 12,
+  },
+  successBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 44,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  printCustomerBtn: {
+    backgroundColor: Colors.primary,
+  },
+  printKotBtn: {
+    backgroundColor: STAFF_GREEN,
+  },
+  successBtnText: {
+    color: '#fff',
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
+  successCloseBtn: {
+    width: '100%',
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+    backgroundColor: Colors.surface,
+  },
+  successCloseBtnText: {
+    color: Colors.textMuted,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
 
   // ── Cart Modal overlay
   cartOverlay: {
@@ -816,22 +1105,23 @@ const styles = StyleSheet.create({
   emptyCartText: { fontSize: FontSize.base, fontWeight: FontWeight.semibold, color: Colors.textMuted },
   emptyCartSub: { fontSize: FontSize.xs, color: Colors.textLight, marginTop: 4 },
 
-  // Cart rows
-  cartRow: {
+  // Cart item card
+  cartCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 11,
     gap: 10,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.borderLight,
+    backgroundColor: Colors.bg,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
   },
   cartEmojiBox: {
-    width: 40, height: 40, borderRadius: 10,
-    backgroundColor: Colors.bg,
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: Colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
-  cartEmoji: { fontSize: 22 },
   cartInfo: { flex: 1, minWidth: 0 },
   cartItemName: {
     fontSize: FontSize.sm, fontWeight: FontWeight.semibold,
@@ -842,7 +1132,7 @@ const styles = StyleSheet.create({
   // Qty stepper
   qtyControl: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.surface,
     borderRadius: 10, borderWidth: 1, borderColor: Colors.border,
     overflow: 'hidden',
   },
@@ -931,33 +1221,7 @@ const styles = StyleSheet.create({
   },
   placeOrderText: { color: '#fff', fontSize: FontSize.base, fontWeight: FontWeight.bold },
 
-  // ── Premium Image & Viewer styles
-  menuImageContainer: {
-    width: '100%',
-    height: 105,
-    borderRadius: 10,
-    overflow: 'hidden',
-    marginBottom: 8,
-    backgroundColor: Colors.bg,
-  },
-  menuImage: {
-    width: '100%',
-    height: '100%',
-  },
-  menuEmojiPlaceholder: {
-    width: '100%',
-    height: 105,
-    borderRadius: 10,
-    backgroundColor: '#F0FDF4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#DCFCE7',
-  },
-  menuEmojiPlaceholderText: {
-    fontSize: 32,
-  },
+  // ── Fullscreen image viewer styles
   imageModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.92)',

@@ -23,6 +23,7 @@ import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { FontWeight } from '../constants/typography';
+import { Colors } from '../constants/colors';
 
 import PosScreen        from '../screens/staff/PosScreen';
 import KotScreen        from '../screens/staff/KotScreen';
@@ -54,7 +55,7 @@ const ALL_TABS: TabDef[] = [
   { name: 'Menu',       permissionKey: 'menu',        active: 'grid',       inactive: 'grid-outline',       label: 'Menu',    component: StaffMenuScreen  },
 ];
 
-const STAFF_GREEN = '#22C55E';
+const STAFF_GREEN = Colors.primary;
 
 interface Props {
   userEmail?: string;
@@ -79,7 +80,7 @@ export default function StaffTabNavigator({ userEmail, outletName, outletId, onL
 
 
   return (
-    <StaffOrderProvider outletId={outletId}>
+    <StaffOrderProvider outletId={outletId} outletName={outletName} userEmail={userEmail}>
       <Tab.Navigator
         screenOptions={({ route }) => {
           const cfg = tabs.find(t => t.name === route.name)
