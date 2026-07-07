@@ -89,5 +89,6 @@ router.get('/kot-analytics', controller.getKotAnalytics);
 router.get('/table-analytics', controller.getTableAnalytics);
 router.get('/customer-analytics', controller.getCustomerAnalytics);
 router.get('/recent-orders', controller.getRecentOrders);
+router.get('/food-cost', controller.getFoodCostReport);
 
 module.exports = router;

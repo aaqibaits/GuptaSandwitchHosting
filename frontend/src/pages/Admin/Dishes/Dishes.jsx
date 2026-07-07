@@ -8,6 +8,7 @@ import {
   deleteDish,
   createCategory
 } from "../../../services/dishesApi";
+import { fetchIngredients, fetchDishIngredients } from "../../../services/ingredientsApi";
 import "./Dishes.css";
 
 // const OUTLETS = ["Koregaon Park", "Baner", "Kothrud"];
@@ -19,7 +20,7 @@ const BLANK_FORM = {
   parcel: "",
   swiggy: "",
   zomato: "",
-  ingredients: "",
+  recipe: [],          // [{ ingredient_id, ingredient_name, unit, quantity_required }]
   allOutlets: true,
   outlets: {},
   image: null,
@@ -30,6 +31,7 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
   const [outlets, setOutlets] = useState([]);
   const [dishes, setDishes] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [ingredientsList, setIngredientsList] = useState([]); // all ingredients from DB
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(BLANK_FORM);
   const [loading, setLoading] = useState(true);
@@ -48,10 +50,14 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
   const [newEditCatName, setNewEditCatName] = useState("");     // Edit modal: new category text
   const [editCatSaving, setEditCatSaving] = useState(false);   // Edit modal: saving spinner
   const [editCatError, setEditCatError] = useState("");       // Edit modal: inline error
+  const [showAddRecipe, setShowAddRecipe] = useState(false);   // Add modal: view ingredients toggle
+  const [showEditRecipe, setShowEditRecipe] = useState(false); // Edit modal: view ingredients toggle
 
-  // Clear errors when modals open/close
+  // Clear errors and toggle views when modals open/close
   useEffect(() => {
     setDishErrors({});
+    setShowAddRecipe(false);
+    setShowEditRecipe(false);
   }, [modal, editModal]);
 
   // ── Load dishes and categories from backend on mount ─────────────────
@@ -66,6 +72,10 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
         // ADD after: const categoriesData = await fetchCategories();
         const outletsData = await fetchOutlets();
         setOutlets(outletsData.map(o => o.name));
+
+        // Load all ingredients for recipe dropdowns
+        const ingsData = await fetchIngredients();
+        setIngredientsList(ingsData || []);
 
         // Load dishes
         const dishesData = await fetchDishes();
@@ -136,7 +146,7 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
   };
 
   // ── Edit handlers ──────────────────────────────────────
-  const handleEditOpen = (d) => {
+  const handleEditOpen = async (d) => {
     setDishErrors({});
     setEditId(d.id);
     setEditForm({
@@ -146,22 +156,21 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
       parcel: d.parcel,
       swiggy: d.swiggy || "",
       zomato: d.zomato || "",
-      ingredients: Array.isArray(d.ingredients)
-        ? d.ingredients.join(", ")
-        : d.ingredients || "",
+      recipe: [],   // will be loaded from API below
       allOutlets: d.outlets?.includes("All"),
-      // outlets: {
-      //   "Koregaon Park": d.outlets?.includes("Koregaon Park"),
-      //   Baner: d.outlets?.includes("Baner"),
-      //   Kothrud: d.outlets?.includes("Kothrud"),
-      // },
-
       outlets: Object.fromEntries(
         outlets.map(o => [o, d.outlets?.includes(o)])
       ),
       image: null,
     });
     setEditModal(true);
+    // Load existing recipe rows from dish_ingredients table
+    try {
+      const rows = await fetchDishIngredients(d.id);
+      setEditForm(f => ({ ...f, recipe: rows || [] }));
+    } catch (err) {
+      console.error("Failed to load dish recipe:", err);
+    }
   };
 
   const handleEditSave = async () => {
@@ -178,7 +187,7 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
     fd.append("parcel_price", editForm.parcel);
     fd.append("swiggy_price", editForm.swiggy);
     fd.append("zomato_price", editForm.zomato);
-    fd.append("ingredients", editForm.ingredients);
+    fd.append("recipe", JSON.stringify(editForm.recipe || []));
     fd.append("outlets", JSON.stringify(selectedOutlets.length ? selectedOutlets : ["All"]));
     if (editForm.image) fd.append("image", editForm.image);
 
@@ -277,7 +286,7 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
     fd.append("parcel_price", form.parcel);
     fd.append("swiggy_price", form.swiggy);
     fd.append("zomato_price", form.zomato);
-    fd.append("ingredients", form.ingredients);
+    fd.append("recipe", JSON.stringify(form.recipe || []));
     fd.append("outlets", JSON.stringify(selectedOutlets.length ? selectedOutlets : ["All"]));
     if (form.image) fd.append("image", form.image);
 
@@ -422,7 +431,7 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
               {/* Dish image */}
               <div className="dish-card__img-wrap">
                 {d.image_url
-                  ? <img src={d.image_url} alt={d.name} />
+                  ? <img src={`https://guptasandwich.work-desk.tech${d.image_url}`} alt={d.name} />
                   : <div className="dish-card__img-placeholder">🍽️</div>
                 }
               </div>
@@ -624,16 +633,147 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
               </div>
             </div>
 
-            {/* Ingredients */}
-            <div className="form-row">
-              <label className="form-label">Ingredients (comma separated)</label>
-              <input
-                className="form-input"
-                name="ingredients"
-                value={form.ingredients}
-                onChange={handleChange}
-                placeholder="Bread, Lettuce, Tomato, Mayo"
-              />
+            {/* Recipe Builder / Table Viewer */}
+            <div className="form-row" style={{ marginTop: 12 }}>
+              <label className="form-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>Recipe Ingredients:</span>
+                <button
+                  type="button"
+                  onClick={() => setShowAddRecipe(!showAddRecipe)}
+                  style={{
+                    padding: "4px 8px", fontSize: 11, borderRadius: 6, border: "1px solid #1a1208",
+                    background: "#fffbee", color: "#1a1208", cursor: "pointer", fontWeight: 600
+                  }}
+                >
+                  Manage Ingredients
+                </button>
+              </label>
+              
+              <div style={{ fontSize: 13, color: "#555", padding: "6px 8px", background: "#fcfcfc", borderRadius: 6, border: "0.5px dashed #ccc", marginBottom: 8 }}>
+                {(form.recipe || []).map(r => r.ingredient_name).filter(Boolean).join(", ") || "No ingredients added yet."}
+              </div>
+
+              {showAddRecipe && (
+                <div style={{ border: "1px solid #e5e5e3", borderRadius: 8, overflow: "hidden", marginTop: 8, background: "#fff" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8f8f6", padding: "6px 12px", borderBottom: "1px solid #e5e5e3" }}>
+                    <span style={{ fontWeight: 600, fontSize: 11, color: "#666" }}>Recipe Mappings Table</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddRecipe(false)}
+                      style={{ border: "none", background: "none", color: "#c0392b", cursor: "pointer", fontSize: 11, fontWeight: "bold" }}
+                    >
+                      ✕ Close Table
+                    </button>
+                  </div>
+                  <table className="recipe-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: "#fcfcfc", borderBottom: "1px solid #e5e5e3" }}>
+                        <th style={{ width: 40, padding: 8, textAlign: "center" }}>
+                          <button
+                            type="button"
+                            onClick={() => setForm(f => ({
+                              ...f,
+                              recipe: [...(f.recipe || []), { ingredient_id: "", ingredient_name: "", unit: "", quantity_required: "" }]
+                            }))}
+                            style={{
+                              border: "none", background: "#1a1208", color: "#f5c842",
+                              borderRadius: 4, width: 22, height: 22, cursor: "pointer", fontSize: 13, fontWeight: "bold"
+                            }}
+                            title="Add Row"
+                          >
+                            +
+                          </button>
+                        </th>
+                        <th style={{ width: 30, padding: 8, textAlign: "left" }}>No.</th>
+                        <th style={{ padding: 8, textAlign: "left" }}>Name</th>
+                        <th style={{ padding: 8, textAlign: "left" }}>Quantity</th>
+                        <th style={{ width: 40, padding: 8, textAlign: "center" }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(form.recipe || []).map((row, idx) => (
+                        <tr key={idx} style={{ borderBottom: "1px solid #f0f0ee" }}>
+                          <td style={{ textAlign: "center", padding: 6 }}>
+                            <span style={{ color: "#aaa" }}>•</span>
+                          </td>
+                          <td style={{ padding: 6 }}>{idx + 1}</td>
+                          <td style={{ padding: 6 }}>
+                            <select
+                              className="form-input"
+                              style={{ width: "100%", padding: "4px 8px", boxSizing: "border-box", fontSize: 12 }}
+                              value={row.ingredient_id || ""}
+                              onChange={(e) => {
+                                const ing = ingredientsList.find(i => String(i.id) === e.target.value);
+                                const updated = [...(form.recipe || [])];
+                                updated[idx] = {
+                                  ...updated[idx],
+                                  ingredient_id: e.target.value,
+                                  ingredient_name: ing?.name || "",
+                                  unit: ing?.unit || "",
+                                };
+                                setForm(f => ({ ...f, recipe: updated }));
+                              }}
+                            >
+                              <option value="">Select ingredient</option>
+                              {ingredientsList.map(ing => {
+                                const isAlreadySelected = (form.recipe || []).some(
+                                  (r, rIdx) => rIdx !== idx && String(r.ingredient_id) === String(ing.id)
+                                );
+                                return (
+                                  <option key={ing.id} value={ing.id} disabled={isAlreadySelected}>
+                                    {ing.name} ({ing.unit}){isAlreadySelected ? " — (Already Added)" : ""}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </td>
+                          <td style={{ padding: 6 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <input
+                                className="form-input"
+                                style={{ flex: 1, padding: "4px 8px", boxSizing: "border-box", fontSize: 12 }}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="Qty"
+                                value={row.quantity_required || ""}
+                                onChange={(e) => {
+                                  const updated = [...(form.recipe || [])];
+                                  updated[idx] = { ...updated[idx], quantity_required: e.target.value };
+                                  setForm(f => ({ ...f, recipe: updated }));
+                                }}
+                              />
+                              <span style={{ fontSize: 11, color: "#666", minWidth: 30 }}>{row.unit || "unit"}</span>
+                            </div>
+                          </td>
+                          <td style={{ textAlign: "center", padding: 6 }}>
+                            <button
+                              type="button"
+                              title="Remove row"
+                              onClick={() => {
+                                const updated = (form.recipe || []).filter((_, i) => i !== idx);
+                                setForm(f => ({ ...f, recipe: updated }));
+                              }}
+                              style={{
+                                border: "none", background: "none", color: "#c0392b", cursor: "pointer", fontSize: 13
+                              }}
+                            >
+                              <i className="ti ti-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {(form.recipe || []).length === 0 && (
+                        <tr>
+                          <td colSpan={5} style={{ padding: 12, textAlign: "center", color: "#aaa" }}>
+                            No ingredients. Click the '+' header button to add.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             {/* Image upload */}
@@ -843,12 +983,147 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
               </div>
             </div>
 
-            <div className="form-row">
-              <label className="form-label">Ingredients (comma separated)</label>
-              <input className="form-input" placeholder="Bread, Lettuce, Tomato"
-                value={editForm.ingredients}
-                onChange={(e) => setEditForm(f => ({ ...f, ingredients: e.target.value }))}
-              />
+            {/* Recipe Builder / Table Viewer */}
+            <div className="form-row" style={{ marginTop: 12 }}>
+              <label className="form-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>Recipe Ingredients:</span>
+                <button
+                  type="button"
+                  onClick={() => setShowEditRecipe(!showEditRecipe)}
+                  style={{
+                    padding: "4px 8px", fontSize: 11, borderRadius: 6, border: "1px solid #1a1208",
+                    background: "#fffbee", color: "#1a1208", cursor: "pointer", fontWeight: 600
+                  }}
+                >
+                  Manage Ingredients
+                </button>
+              </label>
+
+              <div style={{ fontSize: 13, color: "#555", padding: "6px 8px", background: "#fcfcfc", borderRadius: 6, border: "0.5px dashed #ccc", marginBottom: 8 }}>
+                {(editForm.recipe || []).map(r => r.ingredient_name).filter(Boolean).join(", ") || "No ingredients added yet."}
+              </div>
+
+              {showEditRecipe && (
+                <div style={{ border: "1px solid #e5e5e3", borderRadius: 8, overflow: "hidden", marginTop: 8, background: "#fff" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8f8f6", padding: "6px 12px", borderBottom: "1px solid #e5e5e3" }}>
+                    <span style={{ fontWeight: 600, fontSize: 11, color: "#666" }}>Recipe Mappings Table</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowEditRecipe(false)}
+                      style={{ border: "none", background: "none", color: "#c0392b", cursor: "pointer", fontSize: 11, fontWeight: "bold" }}
+                    >
+                      ✕ Close Table
+                    </button>
+                  </div>
+                  <table className="recipe-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: "#fcfcfc", borderBottom: "1px solid #e5e5e3" }}>
+                        <th style={{ width: 40, padding: 8, textAlign: "center" }}>
+                          <button
+                            type="button"
+                            onClick={() => setEditForm(f => ({
+                              ...f,
+                              recipe: [...(f.recipe || []), { ingredient_id: "", ingredient_name: "", unit: "", quantity_required: "" }]
+                            }))}
+                            style={{
+                              border: "none", background: "#1a1208", color: "#f5c842",
+                              borderRadius: 4, width: 22, height: 22, cursor: "pointer", fontSize: 13, fontWeight: "bold"
+                            }}
+                            title="Add Row"
+                          >
+                            +
+                          </button>
+                        </th>
+                        <th style={{ width: 30, padding: 8, textAlign: "left" }}>No.</th>
+                        <th style={{ padding: 8, textAlign: "left" }}>Name</th>
+                        <th style={{ padding: 8, textAlign: "left" }}>Quantity</th>
+                        <th style={{ width: 40, padding: 8, textAlign: "center" }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(editForm.recipe || []).map((row, idx) => (
+                        <tr key={idx} style={{ borderBottom: "1px solid #f0f0ee" }}>
+                          <td style={{ textAlign: "center", padding: 6 }}>
+                            <span style={{ color: "#aaa" }}>•</span>
+                          </td>
+                          <td style={{ padding: 6 }}>{idx + 1}</td>
+                          <td style={{ padding: 6 }}>
+                            <select
+                              className="form-input"
+                              style={{ width: "100%", padding: "4px 8px", boxSizing: "border-box", fontSize: 12 }}
+                              value={row.ingredient_id || ""}
+                              onChange={(e) => {
+                                const ing = ingredientsList.find(i => String(i.id) === String(e.target.value));
+                                const updated = [...(editForm.recipe || [])];
+                                updated[idx] = {
+                                  ...updated[idx],
+                                  ingredient_id: e.target.value,
+                                  ingredient_name: ing?.name || "",
+                                  unit: ing?.unit || "",
+                                };
+                                setEditForm(f => ({ ...f, recipe: updated }));
+                              }}
+                            >
+                              <option value="">Select ingredient</option>
+                              {ingredientsList.map(ing => {
+                                const isAlreadySelected = (editForm.recipe || []).some(
+                                  (r, rIdx) => rIdx !== idx && String(r.ingredient_id) === String(ing.id)
+                                );
+                                return (
+                                  <option key={ing.id} value={ing.id} disabled={isAlreadySelected}>
+                                    {ing.name} ({ing.unit}){isAlreadySelected ? " — (Already Added)" : ""}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </td>
+                          <td style={{ padding: 6 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <input
+                                className="form-input"
+                                style={{ flex: 1, padding: "4px 8px", boxSizing: "border-box", fontSize: 12 }}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="Qty"
+                                value={row.quantity_required || ""}
+                                onChange={(e) => {
+                                  const updated = [...(editForm.recipe || [])];
+                                  updated[idx] = { ...updated[idx], quantity_required: e.target.value };
+                                  setEditForm(f => ({ ...f, recipe: updated }));
+                                }}
+                              />
+                              <span style={{ fontSize: 11, color: "#666", minWidth: 30 }}>{row.unit || "unit"}</span>
+                            </div>
+                          </td>
+                          <td style={{ textAlign: "center", padding: 6 }}>
+                            <button
+                              type="button"
+                              title="Remove row"
+                              onClick={() => {
+                                const updated = (editForm.recipe || []).filter((_, i) => i !== idx);
+                                setEditForm(f => ({ ...f, recipe: updated }));
+                              }}
+                              style={{
+                                border: "none", background: "none", color: "#c0392b", cursor: "pointer", fontSize: 13
+                              }}
+                            >
+                              <i className="ti ti-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {(editForm.recipe || []).length === 0 && (
+                        <tr>
+                          <td colSpan={5} style={{ padding: 12, textAlign: "center", color: "#aaa" }}>
+                            No ingredients. Click the '+' header button to add.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             <div className="form-row">

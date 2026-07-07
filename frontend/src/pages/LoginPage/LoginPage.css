@@ -465,6 +465,8 @@ body {
 @media (max-width: 768px) {
   .gs-page {
     flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
   }
 
   .gs-left {

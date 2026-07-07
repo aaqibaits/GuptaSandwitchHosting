@@ -1,4 +1,5 @@
 const { pool } = require('../../config/database');
+const { saveDishIngredients } = require('../ingredientsController/ingredientsSqlc');
 
 // ── Get all dishes with their outlets ─────────────────────────────────
 const getAllDishes = async () => {
@@ -139,6 +140,11 @@ const insertDish = async (data) => {
 
     const dishId = result.rows[0].id;
 
+    // Save recipe (dish_ingredients) if provided
+    if (data.recipe && Array.isArray(data.recipe) && data.recipe.length > 0) {
+      await saveDishIngredients(client, dishId, data.recipe);
+    }
+
     // Link to outlets
     await linkDishToOutlets(client, dishId, parsedOutlets);
 
@@ -230,6 +236,11 @@ const updateDish = async (id, data) => {
         ? JSON.parse(data.outlets)
         : data.outlets;
       await linkDishToOutlets(client, id, parsedOutlets);
+    }
+
+    // Update recipe (dish_ingredients) if provided
+    if (data.recipe && Array.isArray(data.recipe)) {
+      await saveDishIngredients(client, id, data.recipe);
     }
 
     await client.query("COMMIT");

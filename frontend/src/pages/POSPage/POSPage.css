@@ -4,3 +4,29 @@
   flex: 1;
   overflow: hidden;
 }
+
+@media (max-width: 768px) {
+  .pos-layout {
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .pos-layout .center-panel {
+    height: 45vh !important;
+    height: 45dvh !important;
+    min-height: 180px;
+    flex: 1;
+  }
+
+  .pos-layout .right-panel {
+    width: 100% !important;
+    height: 55vh !important;
+    height: 55dvh !important;
+    min-height: 220px;
+    border-left: none;
+    border-top: 1.5px solid var(--border);
+    position: static !important;
+    padding-bottom: 64px !important;
+  }
+}

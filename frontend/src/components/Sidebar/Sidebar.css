@@ -39,7 +39,8 @@
   transition: all 0.15s;
 }
 
-.nav-item:hover, .nav-item.active {
+.nav-item:hover,
+.nav-item.active {
   background: rgba(232, 89, 12, 0.15);
   color: var(--orange);
 }
@@ -78,6 +79,7 @@
   gap: 2px;
   align-items: center;
 }
+
 /* ─────────────────────────────────────────────────────────────
    SIDEBAR FOOTER — append this to your existing Sidebar.css
    ───────────────────────────────────────────────────────────── */
@@ -86,6 +88,23 @@
 .sidebar {
   display: flex;
   flex-direction: column;
+}
+
+/* ── Mobile Responsive Sidebar Adjustments ── */
+@media (max-width: 768px) {
+  .sidebar {
+    padding-bottom: 64px !important;
+    overflow-y: auto;
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+  }
+  .sidebar::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome/Safari/Opera */
+  }
+  .sidebar-footer {
+    padding-bottom: 0 !important;
+    margin-top: 16px; /* Spacing fallback if screen is very short */
+  }
 }
 
 /* Footer wrapper */
@@ -134,13 +153,13 @@
   top: 50%;
   transform: translateY(-50%);
   background: #1e1e2e;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
   padding: 8px 12px;
   min-width: 170px;
   flex-direction: column;
   gap: 2px;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
   z-index: 999;
   pointer-events: none;
 }
