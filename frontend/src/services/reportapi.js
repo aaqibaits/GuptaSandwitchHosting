@@ -82,3 +82,10 @@ export const fetchCustomerAnalyticsReport = async (filters) =>
  */
 export const fetchRecentOrdersReport = async (filters) => 
   api.get('/reports/recent-orders', buildParams(filters)).then((res) => res.data);
+
+/**
+ * 12. GET /api/reports/food-cost
+ * Returns real ingredient usage & cost from dish_ingredients
+ */
+export const fetchFoodCostReport = async (filters) =>
+  api.get('/reports/food-cost', buildParams(filters)).then((res) => res.data);

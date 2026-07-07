@@ -34,7 +34,8 @@ button {
   cursor: pointer;
 }
 
-input, select {
+input,
+select {
   font-family: inherit;
 }
 
@@ -228,12 +229,12 @@ input, select {
   color: white;
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-header {
   padding: 24px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .sidebar-header h2 {
@@ -261,7 +262,7 @@ input, select {
 }
 
 .sidebar-nav-item:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   padding-left: 28px;
 }
 
@@ -280,7 +281,7 @@ input, select {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .page-title {
@@ -333,7 +334,7 @@ input, select {
   padding: 20px;
   border-radius: 12px;
   margin-bottom: 30px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .form-grid {
@@ -343,7 +344,8 @@ input, select {
   margin-top: 15px;
 }
 
-.form-grid input, .form-grid select {
+.form-grid input,
+.form-grid select {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -360,7 +362,7 @@ input, select {
   background: white;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .dishes-table {
@@ -424,7 +426,7 @@ input, select {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .stat-title {
@@ -449,7 +451,7 @@ input, select {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .chart-title {
@@ -472,7 +474,7 @@ input, select {
   background: white;
   padding: 40px;
   border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   width: 100%;
   max-width: 400px;
 }
@@ -559,7 +561,7 @@ input, select {
   background: white;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Responsive Design */
@@ -567,23 +569,23 @@ input, select {
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .charts-container {
     grid-template-columns: 1fr;
   }
-  
+
   .pos-container {
     flex-direction: column;
   }
-  
+
   .admin-sidebar {
     width: 80px;
   }
-  
+
   .admin-sidebar .nav-label {
     display: none;
   }
-  
+
   .sidebar-header h2 {
     font-size: 1rem;
   }

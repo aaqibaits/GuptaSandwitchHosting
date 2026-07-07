@@ -57,3 +57,35 @@
   min-width: 80px;
   text-align: center;
 }
+
+@media (max-width: 768px) {
+  .topbar {
+    padding: 8px 12px;
+  }
+  
+  .outlet-sub {
+    display: none;
+  }
+
+  .topbar-right {
+    gap: 4px;
+  }
+
+  .stat-pill {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .stat-pill .val {
+    font-size: 12px;
+  }
+
+  .stat-label {
+    display: none;
+  }
+
+  .clock {
+    display: none;
+  }
+}

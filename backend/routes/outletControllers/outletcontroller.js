@@ -102,7 +102,7 @@ const addOutlet = async (req, res) => {
       staff: []
     };
 
-    await queries.insertUser({
+    const createdManager = await queries.insertUser({
       outlet_id: newOutlet.id,
       name: manager,
       email,
@@ -133,7 +133,7 @@ const addOutlet = async (req, res) => {
         access_token,
         swiggy_id,
         zomato_id,
-        users: []
+        users: [mapUserToFrontend(createdManager)]
       }
     });
   } catch (error) {

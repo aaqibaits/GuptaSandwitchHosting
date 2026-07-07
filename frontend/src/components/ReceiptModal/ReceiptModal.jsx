@@ -178,8 +178,8 @@ const ReceiptModal = ({ data, onClose }) => {
           setNeedsPairing(true);
         }
       } else {
-        console.warn('WebUSB not supported, falling back to server print/download.');
-        await handleFallbackPrint(receiptImg, kotImg);
+        console.warn('WebUSB not supported on this device/context. Showing pairing/download dialog.');
+        setNeedsPairing(true);
       }
     } catch (e) {
       console.error('Error in print flow:', e);
@@ -273,7 +273,8 @@ const ReceiptModal = ({ data, onClose }) => {
             color: '#fff',
             padding: '24px',
             borderRadius: '12px',
-            width: '380px',
+            width: '90%',
+            maxWidth: '380px',
             textAlign: 'center',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
             border: '1px solid #2d3139'
