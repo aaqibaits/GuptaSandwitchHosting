@@ -484,7 +484,7 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
       {/* Add Dish Modal */}
       {modal && (
         <div
-          className="modal-bg"
+          className="modal1-bg"
           onClick={(e) => e.target.className === "modal-bg" && setModal(false)}
         >
           <div className="modal">
@@ -648,7 +648,7 @@ export default function Dishes({ selectedOutlet = "All Outlets" }) {
                   Manage Ingredients
                 </button>
               </label>
-              
+
               <div style={{ fontSize: 13, color: "#555", padding: "6px 8px", background: "#fcfcfc", borderRadius: 6, border: "0.5px dashed #ccc", marginBottom: 8 }}>
                 {(form.recipe || []).map(r => r.ingredient_name).filter(Boolean).join(", ") || "No ingredients added yet."}
               </div>

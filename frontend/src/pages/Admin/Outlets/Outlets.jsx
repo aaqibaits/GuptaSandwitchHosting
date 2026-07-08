@@ -604,7 +604,7 @@ export default function Outlets({ currentUser }) {
 
       {/* ── ADD OUTLET MODAL ── */}
       {showAddOutlet && (
-        <div className="modal-bg" onClick={(e) => e.target.className === "modal-bg" && setShowAddOutlet(false)}>
+        <div className="modal2-bg" onClick={(e) => e.target.className === "modal-bg" && setShowAddOutlet(false)}>
           <div className="modal">
             <div className="modal-title">Add New Outlet</div>
             <button className="modal-close" onClick={() => setShowAddOutlet(false)}><i className="ti ti-x" /></button>
