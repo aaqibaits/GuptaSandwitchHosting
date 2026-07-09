@@ -50,9 +50,9 @@ export default function Sidebar({ currentPage, setCurrentPage, onLogout, current
         </div>
 
         {/* Logout Button */}
-        <button className="logout-btn1" onClick={onLogout}>
-          <i className="ti-power-off"></i>
-          <span>Logout</span>
+        <button className="logout-btn1" onClick={onLogout} title="Logout">
+          <i className="ti ti-logout"></i>
+          <span className="logout-text1">Logout</span>
         </button>
       </div>
     </aside>

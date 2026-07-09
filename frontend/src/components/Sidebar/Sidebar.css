@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 0;
+  padding: 12px 0 0;
   gap: 2px;
   flex-shrink: 0;
   z-index: 20;
@@ -93,24 +93,23 @@
 /* ── Mobile Responsive Sidebar Adjustments ── */
 @media (max-width: 768px) {
   .sidebar {
-    padding-bottom: 64px !important;
     overflow-y: auto;
-    scrollbar-width: none; /* Hide scrollbar for Firefox */
-    -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
   .sidebar::-webkit-scrollbar {
-    display: none; /* Hide scrollbar for Chrome/Safari/Opera */
+    display: none;
   }
   .sidebar-footer {
-    padding-bottom: 0 !important;
-    margin-top: 16px; /* Spacing fallback if screen is very short */
+    margin-top: auto;
+    padding-bottom: 68px;
   }
 }
 
 /* Footer wrapper */
 .sidebar-footer {
   margin-top: auto;
-  padding: 10px 0 10px;
+  padding: 10px 0 16px;
   display: flex;
   flex-direction: column;
   align-items: center;

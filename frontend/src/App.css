@@ -196,8 +196,11 @@ select {
 
 .staff-app .content {
   flex: 1;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding: 0;
+  min-width: 0;
 }
 
 /* ── Admin App Specific Styles ── */

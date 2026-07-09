@@ -83,3 +83,52 @@
   width: 100%;
   height: 300px;
 }
+
+/* ════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ════════════════════════════ */
+
+/* Small tablets (600px+) */
+@media only screen and (min-width: 600px) {
+  .metrics-grid1 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Medium tablets (768px+) */
+@media only screen and (min-width: 768px) {
+  .metrics-grid1 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .chart-wrap1 {
+    height: 260px;
+  }
+}
+
+/* Large screens (1024px+) */
+@media only screen and (min-width: 1024px) {
+  .metrics-grid1 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .chart-wrap1 {
+    height: 300px;
+  }
+}
+
+/* Mobile fallback (max-width: 599px) */
+@media only screen and (max-width: 599px) {
+  .metrics-grid1 {
+    grid-template-columns: 1fr;
+  }
+
+  .period-row1 {
+    flex-wrap: wrap;
+  }
+
+  .chart-wrap1 {
+    height: 220px;
+  }
+}
