@@ -17,6 +17,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
 import { FontSize, FontWeight } from '../../constants/typography';
 import { DEFAULT_MENU_ITEMS } from '../../constants/menu';
@@ -66,6 +67,8 @@ export default function PosScreen() {
     addToCart, removeFromCart, updateQty, placeOrder,
     clearCart, refreshKots, outletName, staffName,
   } = useStaffOrder();
+
+  const insets = useSafeAreaInsets();
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS as MenuItem[]);
   const [menuLoading, setMenuLoading] = useState(false);
@@ -242,36 +245,6 @@ export default function PosScreen() {
           ))}
         </View>
 
-        {/* Table / Payment row */}
-        <View style={styles.metaRow}>
-
-          {/* Payment method */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.payScroll}
-            contentContainerStyle={styles.payScrollContent}
-          >
-            {PAYMENT_METHODS.map(m => (
-              <TouchableOpacity
-                key={m}
-                style={[styles.payPill, paymentMethod === m && styles.payPillActive]}
-                onPress={() => setPaymentMethod(m)}
-                activeOpacity={0.8}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  {m === 'Cash' && <Ionicons name="cash-outline" size={12} color={paymentMethod === m ? STAFF_GREEN : Colors.textMuted} />}
-                  {m === 'UPI' && <Ionicons name="phone-portrait-outline" size={12} color={paymentMethod === m ? STAFF_GREEN : Colors.textMuted} />}
-                  {m === 'Card' && <Ionicons name="card-outline" size={12} color={paymentMethod === m ? STAFF_GREEN : Colors.textMuted} />}
-                  {m === 'Online' && <Ionicons name="globe-outline" size={12} color={paymentMethod === m ? STAFF_GREEN : Colors.textMuted} />}
-                  <Text style={[styles.payPillText, paymentMethod === m && styles.payPillTextActive]}>
-                    {m}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
       </View>
 
       {/* ── Search bar ──────────────────────────────────────────── */}
@@ -415,6 +388,11 @@ export default function PosScreen() {
           dine_price: item.dine_price,
           parcel_price: item.parcel_price,
         })}
+        onChangeOrderType={(type) => {
+          setOrderType(type);
+          if (type === 'parcel') setTableLabel('Parcel');
+          else setTableLabel('Table 1');
+        }}
         showToast={showVoiceToast}
       />
 
@@ -616,7 +594,7 @@ export default function PosScreen() {
             </ScrollView>
 
             {/* Totals + CTA — always visible at bottom */}
-            <View style={styles.totalsBox}>
+            <View style={[styles.totalsBox, { paddingBottom: Math.max(20, insets.bottom + 12) }]}>
               {/* Discount */}
               <View style={styles.discountRow}>
                 <Ionicons name="pricetag-outline" size={15} color={Colors.textMuted} style={{ marginRight: 6 }} />

@@ -23,6 +23,7 @@ import {
   removeDish, uploadDishImage, ApiDish
 } from '../../services/dishesApi';
 import { getAllOutlets } from '../../services/outletApi';
+import { fetchIngredients, fetchDishIngredients, Ingredient, DishIngredient } from '../../services/ingredientsApi';
 import * as ImagePicker from 'expo-image-picker';
 import { ApiError, BASE_URL, getToken } from '../../services/api';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -46,11 +47,19 @@ function apiToLocalDish(d: ApiDish): Dish {
   };
 }
 
+interface FormRecipeRow {
+  ingredient_id: string;
+  ingredient_name: string;
+  unit: string;
+  quantity_required: string;
+}
+
 const BLANK_FORM = {
   name: '', cat: 'Sandwiches',
   dine: '', parcel: '', swiggy: '', zomato: '',
   ingredients: '', allOutlets: true,
   outlets: { 'Koregaon Park': false, Baner: false, Kothrud: false } as Record<string, boolean>,
+  recipe: [] as FormRecipeRow[],
 };
 
 export default function DishesScreen() {
@@ -67,6 +76,12 @@ export default function DishesScreen() {
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [selectedImageFile, setSelectedImageFile] = useState<any | null>(null);
   const [deleteWarningDish, setDeleteWarningDish] = useState<Dish | null>(null);
+
+  // New state variables for recipe ingredients builder
+  const [ingredientsList, setIngredientsList] = useState<Ingredient[]>([]);
+  const [showRecipeBuilder, setShowRecipeBuilder] = useState(false);
+  const [activeRecipeRowIndex, setActiveRecipeRowIndex] = useState<number | null>(null);
+  const [ingSearch, setIngSearch] = useState('');
 
   const handlePickImage = async () => {
     if (Platform.OS === 'web') {
@@ -103,10 +118,11 @@ export default function DishesScreen() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [dishRes, catRes, outletRes] = await Promise.all([
+      const [dishRes, catRes, outletRes, ingsRes] = await Promise.all([
         getDishes(),
         getCategories(),
-        getAllOutlets()
+        getAllOutlets(),
+        fetchIngredients()
       ]);
       setDishes(dishRes.dishes.map(apiToLocalDish));
       if (catRes.categories?.length) {
@@ -114,6 +130,9 @@ export default function DishesScreen() {
       }
       if (outletRes.outlets?.length) {
         setDynamicOutlets(outletRes.outlets.map((o) => o.name));
+      }
+      if (ingsRes) {
+        setIngredientsList(ingsRes);
       }
     } catch {
       // Keep empty — show EmptyState
@@ -136,7 +155,7 @@ export default function DishesScreen() {
     setDeleteWarningDish(dish);
   };
 
-  const handleEditPress = (d: Dish) => {
+  const handleEditPress = async (d: Dish) => {
     setEditDish(d);
     setForm({
       name: d.name,
@@ -151,10 +170,27 @@ export default function DishesScreen() {
         acc[o] = d.outlets.includes(o);
         return acc;
       }, {} as Record<string, boolean>),
+      recipe: [],
     });
     setSelectedImageUri(d.image_url ? `${BASE_URL}${d.image_url}` : null);
     setSelectedImageFile(null);
+    setShowRecipeBuilder(false);
     setModal(true);
+
+    try {
+      const recipeRows = await fetchDishIngredients(d.id);
+      setForm(f => ({
+        ...f,
+        recipe: (recipeRows || []).map(r => ({
+          ingredient_id: String(r.ingredient_id),
+          ingredient_name: r.ingredient_name,
+          unit: r.unit,
+          quantity_required: String(r.quantity_required)
+        }))
+      }));
+    } catch (err) {
+      console.warn('[DishesScreen] Failed to load recipe rows:', err);
+    }
   };
 
   const handleSave = async () => {
@@ -165,6 +201,12 @@ export default function DishesScreen() {
         ? ['All']
         : dynamicOutlets.filter((o) => form.outlets[o]);
 
+      // Auto-generate ingredients text string from recipe ingredient names
+      const ingredientsString = form.recipe
+        .filter(r => r.ingredient_id && r.ingredient_name)
+        .map(r => r.ingredient_name)
+        .join(', ');
+
       const fd = new FormData();
       fd.append('name', form.name);
       fd.append('category', form.cat);
@@ -172,8 +214,18 @@ export default function DishesScreen() {
       fd.append('parcel_price', form.parcel);
       fd.append('swiggy_price', form.swiggy || '');
       fd.append('zomato_price', form.zomato || '');
-      fd.append('ingredients', form.ingredients);
+      fd.append('ingredients', ingredientsString);
       fd.append('outlets', JSON.stringify(selectedOutlets.length ? selectedOutlets : ['All']));
+
+      const recipePayload = form.recipe
+        .filter(r => r.ingredient_id)
+        .map(r => ({
+          ingredient_id: Number(r.ingredient_id),
+          ingredient_name: r.ingredient_name,
+          unit: r.unit,
+          quantity_required: Number(r.quantity_required) || 0
+        }));
+      fd.append('recipe', JSON.stringify(recipePayload));
 
       if (selectedImageFile) {
         fd.append('image', selectedImageFile);
@@ -496,15 +548,91 @@ export default function DishesScreen() {
                 </View>
               </FieldRow>
 
-              <FieldRow label="Ingredients (comma separated)">
-                <TextInput
-                  style={styles.input}
-                  placeholder="Bread, Paneer, Mayo, Capsicum"
-                  placeholderTextColor={Colors.textLight}
-                  value={form.ingredients}
-                  onChangeText={(v) => setForm((f) => ({ ...f, ingredients: v }))}
-                />
-              </FieldRow>
+
+
+              {/* Recipe builder section */}
+              <View style={{ marginVertical: 10 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <Text style={fieldStyles.label}>Recipe Ingredients</Text>
+                  <TouchableOpacity
+                    style={styles.manageIngsBtn}
+                    onPress={() => setShowRecipeBuilder(!showRecipeBuilder)}
+                  >
+                    <Text style={styles.manageIngsBtnText}>
+                      {showRecipeBuilder ? 'Hide Builder' : 'Manage Recipe'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {showRecipeBuilder ? (
+                  <View style={styles.recipeBuilderContainer}>
+                    {form.recipe.map((row, idx) => (
+                      <View key={idx} style={styles.recipeRow}>
+                        {/* Ingredient select button */}
+                        <TouchableOpacity
+                          style={styles.recipeSelectBtn}
+                          onPress={() => {
+                            setActiveRecipeRowIndex(idx);
+                            setIngSearch('');
+                          }}
+                        >
+                          <Text style={[styles.recipeSelectText, !row.ingredient_name && { color: Colors.textLight }]}>
+                            {row.ingredient_name || 'Select Ingredient'}
+                          </Text>
+                          <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
+                        </TouchableOpacity>
+
+                        {/* Quantity input */}
+                        <TextInput
+                          style={styles.recipeQtyInput}
+                          placeholder="Qty"
+                          placeholderTextColor={Colors.textLight}
+                          keyboardType="numeric"
+                          value={row.quantity_required}
+                          onChangeText={(v) => {
+                            const updated = [...form.recipe];
+                            updated[idx].quantity_required = v;
+                            setForm(f => ({ ...f, recipe: updated }));
+                          }}
+                        />
+
+                        {/* Unit label */}
+                        <Text style={styles.recipeUnitText}>
+                          {row.unit || '-'}
+                        </Text>
+
+                        {/* Delete row */}
+                        <TouchableOpacity
+                          style={styles.recipeDeleteBtn}
+                          onPress={() => {
+                            const updated = form.recipe.filter((_, i) => i !== idx);
+                            setForm(f => ({ ...f, recipe: updated }));
+                          }}
+                        >
+                          <Ionicons name="trash-outline" size={16} color={Colors.red} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+
+                    <TouchableOpacity
+                      style={styles.addRecipeRowBtn}
+                      onPress={() => {
+                        setForm(f => ({
+                          ...f,
+                          recipe: [...(f.recipe || []), { ingredient_id: '', ingredient_name: '', unit: '', quantity_required: '' }]
+                        }));
+                      }}
+                    >
+                      <Ionicons name="add" size={16} color={Colors.primary} style={{ marginRight: 4 }} />
+                      <Text style={styles.addRecipeRowBtnText}>Add Row</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <Text style={styles.recipeSummary}>
+                    {form.recipe.map(r => r.ingredient_name).filter(Boolean).join(', ') || 'No recipe ingredients mapped yet.'}
+                  </Text>
+                )}
+              </View>
 
               <FieldRow label="Outlets">
                 <View style={styles.switchRow}>
@@ -544,6 +672,60 @@ export default function DishesScreen() {
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Ingredient Selector Modal */}
+      <Modal visible={activeRecipeRowIndex !== null} animationType="fade" transparent>
+        <View style={styles.pickerModalBg}>
+          <View style={styles.pickerModalContent}>
+            <View style={styles.pickerHeader}>
+              <Text style={styles.pickerTitle}>Select Ingredient</Text>
+              <TouchableOpacity onPress={() => setActiveRecipeRowIndex(null)}>
+                <Ionicons name="close" size={22} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+            
+            <TextInput
+              style={styles.pickerSearch}
+              placeholder="Search ingredient..."
+              placeholderTextColor={Colors.textLight}
+              value={ingSearch}
+              onChangeText={setIngSearch}
+            />
+
+            <FlatList
+              data={ingredientsList.filter(i => i.name.toLowerCase().includes(ingSearch.toLowerCase()))}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.pickerItem}
+                  onPress={() => {
+                    if (activeRecipeRowIndex !== null) {
+                      const updated = [...form.recipe];
+                      updated[activeRecipeRowIndex] = {
+                        ingredient_id: String(item.id),
+                        ingredient_name: item.name,
+                        unit: item.unit,
+                        quantity_required: updated[activeRecipeRowIndex]?.quantity_required || ''
+                      };
+                      setForm(f => ({ ...f, recipe: updated }));
+                    }
+                    setActiveRecipeRowIndex(null);
+                    setIngSearch('');
+                  }}
+                >
+                  <Text style={styles.pickerItemText}>{item.name}</Text>
+                  <Badge label={item.unit} variant="muted" />
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <View style={styles.pickerEmpty}>
+                  <Text style={styles.pickerEmptyText}>No ingredients found</Text>
+                </View>
+              }
+            />
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -828,5 +1010,154 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semibold,
     color: Colors.textOnDark,
+  },
+
+  // Recipe Builder styles
+  manageIngsBtn: {
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FFEDD5',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  manageIngsBtnText: {
+    fontSize: 12,
+    color: '#C2410C',
+    fontWeight: FontWeight.semibold,
+  },
+  recipeBuilderContainer: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    padding: 10,
+    gap: 8,
+  },
+  recipeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  recipeSelectBtn: {
+    flex: 2.2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+  },
+  recipeSelectText: {
+    fontSize: 13,
+    color: Colors.text,
+    fontWeight: FontWeight.medium,
+  },
+  recipeQtyInput: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  recipeUnitText: {
+    width: 42,
+    fontSize: 12,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
+  recipeDeleteBtn: {
+    padding: 8,
+  },
+  addRecipeRowBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 8,
+    paddingVertical: 8,
+    marginTop: 4,
+  },
+  addRecipeRowBtnText: {
+    fontSize: 13,
+    color: Colors.primary,
+    fontWeight: FontWeight.semibold,
+  },
+  recipeSummary: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    fontStyle: 'italic',
+    paddingLeft: 4,
+  },
+
+  // Picker Modal styles
+  pickerModalBg: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  pickerModalContent: {
+    width: '100%',
+    maxHeight: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  pickerTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.text,
+  },
+  pickerSearch: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: FontSize.md,
+    color: Colors.text,
+    marginBottom: 12,
+  },
+  pickerItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  pickerItemText: {
+    fontSize: FontSize.md,
+    color: Colors.text,
+    fontWeight: FontWeight.medium,
+  },
+  pickerEmpty: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  pickerEmptyText: {
+    color: Colors.textMuted,
+    fontSize: FontSize.sm,
   },
 });

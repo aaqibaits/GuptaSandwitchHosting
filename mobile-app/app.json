@@ -15,14 +15,21 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.guptasandwich.admin"
+      "bundleIdentifier": "com.guptasandwich.admin",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to securely recognize user speech.",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#1A1208"
       },
-      "package": "com.guptasandwich.admin"
+      "package": "com.guptasandwich.admin",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/icon.png"
@@ -34,13 +41,15 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone.",
           "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to securely recognize user speech."
         }
-      ]
+      ],
+      "./plugins/withJetifier",
+      "expo-font"
     ],
     "extra": {
       "eas": {
-        "projectId": "07f8e994-30d1-4abe-9054-dc644dcfa4bf"
+        "projectId": "67dbcd2d-6667-4223-9da9-e356352d10f5"
       }
     },
-    "owner": "aaqib_kosqu"
+    "owner": "mustakim-pathan"
   }
 }

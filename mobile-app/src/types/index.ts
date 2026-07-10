@@ -11,6 +11,13 @@ export interface User {
 }
 
 // ── Dishes ──────────────────────────────────────────────────────────────────
+export interface DishIngredient {
+  ingredient_id: number;
+  ingredient_name: string;
+  unit: 'kg' | 'litre' | 'pack';
+  quantity_required: number;
+}
+
 export interface Dish {
   id: number;
   name: string;
@@ -22,6 +29,7 @@ export interface Dish {
   ingredients: string[];
   outlets: string[];
   image_url?: string | null;
+  recipe?: DishIngredient[];
 }
 
 // ── Outlets & Users ─────────────────────────────────────────────────────────
@@ -79,6 +87,7 @@ export type DashboardPeriod = 'today' | 'yesterday' | 'week' | 'month';
 export type AdminTabParamList = {
   Dashboard: undefined;
   Dishes: undefined;
+  Ingredients: undefined;
   Reports: undefined;
   Accounting: undefined;
   Outlets: undefined;

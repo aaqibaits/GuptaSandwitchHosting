@@ -148,7 +148,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
           {/* Logo image */}
           <Image
-            source={require('../../../assets/logo.jpeg')}
+            source={require('../../../assets/icon.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -279,10 +279,9 @@ const styles = StyleSheet.create({
   },
 
   logo: {
-    width: 110,
-    height: 110,
+    width: 120,
+    height: 120,
     marginBottom: 10,
-    borderRadius: 12,
   },
   brandGupta: {
     fontSize: 42,

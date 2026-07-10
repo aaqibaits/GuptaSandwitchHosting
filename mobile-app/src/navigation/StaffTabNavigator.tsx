@@ -22,6 +22,7 @@ import React from 'react';
 import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontWeight } from '../constants/typography';
 import { Colors } from '../constants/colors';
 
@@ -66,6 +67,7 @@ interface Props {
 }
 
 export default function StaffTabNavigator({ userEmail, outletName, outletId, onLogout, permissions }: Props) {
+  const insets = useSafeAreaInsets();
   // Filter tabs based on backend permissions.
   // If permissions.staff has entries, only show allowed tabs.
   // If permissions are missing or empty, fall back to showing ALL tabs.
@@ -104,8 +106,8 @@ export default function StaffTabNavigator({ userEmail, outletName, outletId, onL
             tabBarStyle: {
               backgroundColor: '#0F172A',
               borderTopWidth: 0,
-              height: Platform.OS === 'ios' ? 84 : 62,
-              paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+              height: 60 + insets.bottom,
+              paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
               paddingTop: 6,
               shadowColor: '#000',
               shadowOffset: { width: 0, height: -4 },

@@ -26,8 +26,8 @@ import { printCustomerReceipt, printKotReceipt } from '../../services/printServi
 
 const STAFF_GREEN = Colors.primary;
 
-type FilterStatus = 'All' | OrderStatus;
-const FILTERS: FilterStatus[] = ['All', 'pending', 'preparing', 'ready', 'dispatched'];
+type FilterStatus = 'All' | 'pending' | 'ready';
+const FILTERS: FilterStatus[] = ['All', 'pending', 'ready'];
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   pending:   { label: 'Pending',   color: '#C2410C', bg: '#FFEDD5' },
@@ -302,34 +302,29 @@ export default function KotScreen() {
 
   const filtered = filter === 'All'
     ? kotOrders.filter(k => k.status !== 'dispatched' && k.status !== 'cancelled')
-    : kotOrders.filter(k => k.status === filter);
+    : filter === 'ready'
+      ? kotOrders.filter(k => k.status === 'ready' || k.items.every(i => k.itemStatuses[i.id] === 'ready'))
+      : kotOrders.filter(k => k.status !== 'dispatched' && k.status !== 'cancelled' && !k.items.every(i => k.itemStatuses[i.id] === 'ready'));
 
   const counts: Record<string, number> = {
-    All: kotOrders.filter(k => k.status !== 'dispatched' && k.status !== 'cancelled').length
+    All: kotOrders.filter(k => k.status !== 'dispatched' && k.status !== 'cancelled').length,
+    pending: kotOrders.filter(k => k.status !== 'dispatched' && k.status !== 'cancelled' && !k.items.every(i => k.itemStatuses[i.id] === 'ready')).length,
+    ready: kotOrders.filter(k => k.status === 'ready' || k.items.every(i => k.itemStatuses[i.id] === 'ready')).length,
   };
-  FILTERS.slice(1).forEach(f => {
-    counts[f] = kotOrders.filter(k => k.status === f).length;
-  });
 
   // Stat cards config
   const STAT_CARDS = [
     { key: 'All',       label: 'Active Orders', icon: 'clipboard-outline',     iconLib: 'Ionicons',     bg: '#F8FAFC', numColor: Colors.text },
     { key: 'pending',   label: 'Pending',       icon: 'time-outline',           iconLib: 'Ionicons',     bg: '#FFF7ED', numColor: '#C2410C' },
-    { key: 'preparing', label: 'Preparing',     icon: 'restaurant-outline',     iconLib: 'Ionicons',     bg: '#EFF6FF', numColor: '#1D4ED8' },
     { key: 'ready',     label: 'Ready',         icon: 'checkmark-circle-outline', iconLib: 'Ionicons',  bg: Colors.primaryLight, numColor: STAFF_GREEN },
-    { key: 'dispatched', label: 'Dispatched',    icon: 'rocket-outline',         iconLib: 'Ionicons',     bg: '#F5F3FF', numColor: '#7C3AED' },
   ];
 
   return (
     <View style={styles.root}>
 
       {/* ── Stat cards row ────────────────────────────────────────────── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.statScroll}
-        contentContainerStyle={styles.statContent}
-      >
+      {/* ── Stat cards row ────────────────────────────────────────────── */}
+      <View style={styles.statContent}>
         {STAT_CARDS.map(card => (
           <TouchableOpacity
             key={card.key}
@@ -348,7 +343,7 @@ export default function KotScreen() {
             <Text style={styles.statLabel}>{card.label}</Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
       {/* ── Status filter pills ────────────────────────────────────────── */}
       <ScrollView
@@ -418,22 +413,19 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.bg },
 
   // ── Stat cards
-  statScroll: {
-    flexGrow: 0,
-    flexShrink: 0,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
   statContent: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   statCard: {
-    width: 90,
+    flex: 1,
     borderRadius: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 8,
     alignItems: 'center',
     borderWidth: 1.5,

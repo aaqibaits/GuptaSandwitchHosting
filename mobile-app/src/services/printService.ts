@@ -9,6 +9,14 @@
 import * as Print from 'expo-print';
 import { Image } from 'react-native';
 import { KotOrder, LiveOrder } from '../types';
+import {
+  getSavedUSBPrinters,
+  requestUSBPrinter,
+  sendBytesToUSBPrinter,
+  formatReceiptESCPOS,
+  formatKOTESCPOS,
+  formatLiveOrderESCPOS,
+} from '../utils/webusbPrinter';
 
 /**
  * Format a Date input to en-IN locale format (e.g. "02 Jul 2026, 11:30 AM")
@@ -173,6 +181,28 @@ const thermalStyles = `
  * Print a customer billing receipt / invoice.
  */
 export async function printCustomerReceipt(order: KotOrder, outletName?: string, staffName?: string) {
+  // WebUSB support check
+  if (typeof navigator !== 'undefined' && (navigator as any).usb) {
+    try {
+      const devices = await getSavedUSBPrinters();
+      let printerDevice = devices.length > 0 ? devices[0] : null;
+
+      if (!printerDevice) {
+        console.log('[PrintService] No saved printer found. Triggering WebUSB requestDevice...');
+        printerDevice = await requestUSBPrinter();
+      }
+
+      if (printerDevice) {
+        console.log('[PrintService] WebUSB Printer selected:', printerDevice.productName);
+        const bytes = formatReceiptESCPOS(order, outletName, staffName);
+        await sendBytesToUSBPrinter(printerDevice, bytes);
+        return { success: true };
+      }
+    } catch (usbError) {
+      console.warn('[PrintService] WebUSB customer print failed, falling back to expo-print:', usbError);
+    }
+  }
+
   const details = getOutletDetails(outletName);
   const logoUri = getLogoUri();
   
@@ -294,6 +324,28 @@ export async function printCustomerReceipt(order: KotOrder, outletName?: string,
  * Print a Kitchen Order Ticket (KOT).
  */
 export async function printKotReceipt(kot: KotOrder, staffName?: string) {
+  // WebUSB support check
+  if (typeof navigator !== 'undefined' && (navigator as any).usb) {
+    try {
+      const devices = await getSavedUSBPrinters();
+      let printerDevice = devices.length > 0 ? devices[0] : null;
+
+      if (!printerDevice) {
+        console.log('[PrintService] No saved printer found. Triggering WebUSB requestDevice...');
+        printerDevice = await requestUSBPrinter();
+      }
+
+      if (printerDevice) {
+        console.log('[PrintService] WebUSB Printer selected for KOT:', printerDevice.productName);
+        const bytes = formatKOTESCPOS(kot, staffName);
+        await sendBytesToUSBPrinter(printerDevice, bytes);
+        return { success: true };
+      }
+    } catch (usbError) {
+      console.warn('[PrintService] WebUSB KOT print failed, falling back to expo-print:', usbError);
+    }
+  }
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -377,6 +429,28 @@ export async function printKotReceipt(kot: KotOrder, staffName?: string) {
  * Print a customer receipt / ticket for a third-party platform order (Swiggy/Zomato).
  */
 export async function printLiveOrderReceipt(order: LiveOrder, outletName?: string, staffName?: string) {
+  // WebUSB support check
+  if (typeof navigator !== 'undefined' && (navigator as any).usb) {
+    try {
+      const devices = await getSavedUSBPrinters();
+      let printerDevice = devices.length > 0 ? devices[0] : null;
+
+      if (!printerDevice) {
+        console.log('[PrintService] No saved printer found. Triggering WebUSB requestDevice...');
+        printerDevice = await requestUSBPrinter();
+      }
+
+      if (printerDevice) {
+        console.log('[PrintService] WebUSB Printer selected for Live Order:', printerDevice.productName);
+        const bytes = formatLiveOrderESCPOS(order, outletName, staffName);
+        await sendBytesToUSBPrinter(printerDevice, bytes);
+        return { success: true };
+      }
+    } catch (usbError) {
+      console.warn('[PrintService] WebUSB Live Order print failed, falling back to expo-print:', usbError);
+    }
+  }
+
   const details = getOutletDetails(outletName);
   const logoUri = getLogoUri();
   const platColor = order.platform === 'Swiggy' ? '#FF5200' : '#E23744';

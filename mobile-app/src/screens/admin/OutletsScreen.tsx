@@ -1,14 +1,3 @@
-/**
- * OutletsScreen.tsx
- * ─────────────────
- * Full outlet & user management panel.
- * Mirrors Outlets.jsx from the web admin panel exactly:
- *  - Outlet cards (name, manager, address, phone, email, username, status)
- *  - Nested user management per outlet (add/edit/delete users)
- *  - Role preset picker (Manager / Cashier / Kitchen Staff / Custom)
- *  - Screen permission grid (Admin + Staff screens)
- *  - Add/Edit outlet modals with validation
- */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -79,13 +68,14 @@ const STAFF_SCREENS = [
   { key: 'kot',         label: 'KOT' },
   { key: 'reports',     label: 'Reports' },
   { key: 'live-orders', label: 'Live Orders' },
+  { key: 'menu',        label: 'Menu' },
 ];
 
 const PRESET_ROLES = [
-  { label: 'Manager',       appRole: 'Admin' as const, desc: 'Full admin access',    permissions: { admin: ['dashboard','dishes','reports','accounting','outlets'], staff: [] } },
-  { label: 'Cashier',       appRole: 'Staff' as const, desc: 'POS + Reports',        permissions: { admin: [], staff: ['pos','reports'] } },
-  { label: 'Kitchen Staff', appRole: 'Staff' as const, desc: 'KOT + Live Orders',    permissions: { admin: [], staff: ['kot','live-orders'] } },
-  { label: 'Custom',        appRole: 'Staff' as const, desc: 'Pick any screens',     permissions: { admin: [], staff: [] } },
+  { label: 'Manager',       appRole: 'Staff' as const, desc: 'Full access to staff screens', permissions: { admin: [], staff: ['pos', 'kot', 'reports', 'live-orders', 'menu'] } },
+  { label: 'Cashier',       appRole: 'Staff' as const, desc: 'POS + Live Orders',            permissions: { admin: [], staff: ['pos', 'live-orders'] } },
+  { label: 'Kitchen Staff', appRole: 'Staff' as const, desc: 'KOT Only',                     permissions: { admin: [], staff: ['kot'] } },
+  { label: 'Custom',        appRole: 'Staff' as const, desc: 'Pick any screens',             permissions: { admin: [], staff: [] } },
 ];
 
 // ── Seed data ────────────────────────────────────────────────────────────────
@@ -99,7 +89,7 @@ const INITIAL_OUTLETS: Outlet[] = [
     users: [
       { id: 101, name: 'Ankit Sharma', email: 'ankit@guptasandwich.in', username: 'ankit_kp',
         password: 'ankit@123', roleLabel: 'Cashier', appRole: 'Staff',
-        permissions: { admin: [], staff: ['pos','reports'] }, status: 'active' },
+        permissions: { admin: [], staff: ['pos','live-orders'] }, status: 'active' },
     ],
   },
   {
@@ -119,7 +109,7 @@ const INITIAL_OUTLETS: Outlet[] = [
 ];
 
 const BLANK_OUTLET = { name: '', address: '', phone: '', manager: '', email: '', username: '', password: '', confirmPassword: '', status: 'active' as const, access_token: '' };
-const BLANK_USER   = { name: '', email: '', username: '', password: '', confirmPassword: '', roleLabel: 'Cashier', appRole: 'Staff' as const, permissions: { admin: [], staff: ['pos','reports'] } as ScreenPermissions, status: 'active' as const };
+const BLANK_USER   = { name: '', email: '', username: '', password: '', confirmPassword: '', roleLabel: 'Cashier', appRole: 'Staff' as const, permissions: { admin: [], staff: ['pos','live-orders'] } as ScreenPermissions, status: 'active' as const };
 
 // ── Main component ───────────────────────────────────────────────────────────
 export default function OutletsScreen() {
@@ -573,20 +563,22 @@ export default function OutletsScreen() {
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Image Picker Option */}
-              <View style={{ marginBottom: 14 }}>
-                <Text style={fi.label}>Outlet Image</Text>
-                <TouchableOpacity style={styles.imagePickerBtn} onPress={handlePickImage} activeOpacity={0.8}>
-                  {selectedImageUri ? (
-                    <Image source={{ uri: selectedImageUri }} style={styles.imagePickerPreview} />
-                  ) : (
-                    <View style={styles.imagePickerPlaceholder}>
-                      <Ionicons name="camera-outline" size={28} color={Colors.textMuted} style={{ marginBottom: 6 }} />
-                      <Text style={styles.imagePickerPlaceholderText}>Select Image</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              </View>
+              {/* Image Picker Option (Edit only) */}
+              {!!editOutlet && (
+                <View style={{ marginBottom: 14 }}>
+                  <Text style={fi.label}>Outlet Image</Text>
+                  <TouchableOpacity style={styles.imagePickerBtn} onPress={handlePickImage} activeOpacity={0.8}>
+                    {selectedImageUri ? (
+                      <Image source={{ uri: selectedImageUri }} style={styles.imagePickerPreview} />
+                    ) : (
+                      <View style={styles.imagePickerPlaceholder}>
+                        <Ionicons name="camera-outline" size={28} color={Colors.textMuted} style={{ marginBottom: 6 }} />
+                        <Text style={styles.imagePickerPlaceholderText}>Select Image</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
 
               <FormInput label="Outlet name *"   value={outletForm.name}     error={outletErrors.name}     onChangeText={v => { setOutletForm(f => ({...f, name: v}));     setOutletErrors(e => ({...e, name: ''})); }}    placeholder="e.g. Koregaon Park" />
               <FormInput label="Address *"        value={outletForm.address}  error={outletErrors.address}  onChangeText={v => { setOutletForm(f => ({...f, address: v}));  setOutletErrors(e => ({...e, address: ''})); }} placeholder="Full address with pin" multiline />

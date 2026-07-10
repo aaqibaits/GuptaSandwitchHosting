@@ -15,11 +15,13 @@ import React from 'react';
 import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
 import { FontSize, FontWeight } from '../constants/typography';
 
 import DashboardScreen  from '../screens/admin/DashboardScreen';
 import DishesScreen     from '../screens/admin/DishesScreen';
+import IngredientsScreen from '../screens/admin/IngredientsScreen';
 import ReportsScreen    from '../screens/admin/ReportsScreen';
 import AccountingScreen from '../screens/admin/AccountingScreen';
 import OutletsScreen    from '../screens/admin/OutletsScreen';
@@ -31,11 +33,12 @@ const Tab = createBottomTabNavigator<AdminTabParamList>();
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_ICONS: Record<string, { active: IoniconName; inactive: IoniconName }> = {
-  Dashboard:  { active: 'grid',        inactive: 'grid-outline' },
-  Dishes:     { active: 'restaurant',  inactive: 'restaurant-outline' },
-  Reports:    { active: 'bar-chart',   inactive: 'bar-chart-outline' },
-  Accounting: { active: 'calculator',  inactive: 'calculator-outline' },
-  Outlets:    { active: 'storefront',  inactive: 'storefront-outline' },
+  Dashboard:   { active: 'grid',        inactive: 'grid-outline' },
+  Dishes:      { active: 'restaurant',  inactive: 'restaurant-outline' },
+  Ingredients: { active: 'nutrition',   inactive: 'nutrition-outline' },
+  Reports:     { active: 'bar-chart',   inactive: 'bar-chart-outline' },
+  Accounting:  { active: 'calculator',  inactive: 'calculator-outline' },
+  Outlets:     { active: 'storefront',  inactive: 'storefront-outline' },
 };
 
 interface AdminTabNavigatorProps {
@@ -49,6 +52,7 @@ export default function AdminTabNavigator({
   userRole,
   onLogout,
 }: AdminTabNavigatorProps) {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -74,8 +78,8 @@ export default function AdminTabNavigator({
         tabBarStyle: {
           backgroundColor: Colors.dark,
           borderTopWidth: 0,
-          height: Platform.OS === 'ios' ? 84 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
           paddingTop: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -4 },
@@ -90,11 +94,12 @@ export default function AdminTabNavigator({
         },
       })}
     >
-      <Tab.Screen name="Dashboard"  component={DashboardScreen}  />
-      <Tab.Screen name="Dishes"     component={DishesScreen}     />
-      <Tab.Screen name="Reports"    component={ReportsScreen}    />
-      <Tab.Screen name="Accounting" component={AccountingScreen} />
-      <Tab.Screen name="Outlets"    component={OutletsScreen}    />
+      <Tab.Screen name="Dashboard"   component={DashboardScreen}   />
+      <Tab.Screen name="Dishes"      component={DishesScreen}      />
+      <Tab.Screen name="Ingredients" component={IngredientsScreen} />
+      <Tab.Screen name="Reports"     component={ReportsScreen}     />
+      <Tab.Screen name="Accounting"  component={AccountingScreen}  />
+      <Tab.Screen name="Outlets"     component={OutletsScreen}     />
     </Tab.Navigator>
   );
 }
