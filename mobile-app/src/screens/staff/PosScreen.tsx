@@ -23,10 +23,13 @@ import { FontSize, FontWeight } from '../../constants/typography';
 import { DEFAULT_MENU_ITEMS } from '../../constants/menu';
 import { useStaffOrder } from '../../context/StaffOrderContext';
 import { OrderType, PaymentMethod, KotOrder } from '../../types';
-import { getAvailableDishes, createOrder, PosDish } from '../../services/posApi';
-import { ApiError, BASE_URL } from '../../services/api';
+import { getAvailableDishes, PosDish } from '../../services/posApi';
+import { BASE_URL } from '../../services/api';
+import { saveMenuToCache, getCachedMenu } from '../../services/offlineDB';
 import VoiceBot from '../../components/staff/VoiceBot';
-import { printCustomerReceipt, printKotReceipt } from '../../services/printService';
+import { printCustomerReceipt, printKotReceipt, downloadReceiptsPDF } from '../../services/printService';
+import OfflineBanner from '../../components/common/OfflineBanner';
+import { useOffline } from '../../context/OfflineContext';
 
 const { width: W } = Dimensions.get('window');
 const STAFF_GREEN = Colors.primary;
@@ -68,6 +71,7 @@ export default function PosScreen() {
     clearCart, refreshKots, outletName, staffName,
   } = useStaffOrder();
 
+  const { isOnline } = useOffline();
   const insets = useSafeAreaInsets();
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS as MenuItem[]);
@@ -95,23 +99,58 @@ export default function PosScreen() {
     setTimeout(() => setVoiceToast(null), 2500);
   }, []);
 
-  // ── Fetch real menu from API ───────────────────────────────────────────
+  // ── Fetch real menu from API (with offline cache fallback) ───────────
   const fetchMenu = useCallback(async () => {
     setMenuLoading(true);
     try {
-      const res = await getAvailableDishes();
-      if (res.dishes?.length) {
-        const items = res.dishes.map(apiDishToMenuItem);
+      // Step 1: Pehle SQLite cache se instant show karo
+      const cached = getCachedMenu();
+      if (cached.length > 0) {
+        const items = cached.map(d => ({
+          id: d.id,
+          name: d.name,
+          cat: d.category,
+          price: d.dine_price || d.price,
+          emoji: d.emoji || '🍔',
+          dine_price: d.dine_price,
+          parcel_price: d.parcel_price,
+          image_url: d.image_url,
+        } as MenuItem));
         setMenuItems(items);
         const cats = ['All', ...Array.from(new Set(items.map(i => i.cat)))];
         setAllCats(cats);
       }
+
+      // Step 2: Network se fresh data lo (background)
+      if (isOnline) {
+        const res = await getAvailableDishes();
+        if (res.dishes?.length) {
+          const items = res.dishes.map(apiDishToMenuItem);
+          setMenuItems(items);
+          const cats = ['All', ...Array.from(new Set(items.map(i => i.cat)))];
+          setAllCats(cats);
+
+          // SQLite mein cache karo future offline use ke liye
+          saveMenuToCache(res.dishes.map(d => ({
+            id: d.id,
+            name: d.name,
+            category: d.category,
+            price: d.price,
+            dine_price: d.dine_price,
+            parcel_price: d.parcel_price,
+            emoji: d.emoji || '🍔',
+            is_available: d.is_available ? 1 : 0,
+            image_url: d.image_url || null,
+            updated_at: new Date().toISOString(),
+          })));
+        }
+      }
     } catch {
-      // Keep fallback DEFAULT_MENU_ITEMS
+      // Cache aur DEFAULT_MENU_ITEMS already set hain — kuch nahi karna
     } finally {
       setMenuLoading(false);
     }
-  }, []);
+  }, [isOnline]);
 
   useEffect(() => { fetchMenu(); }, [fetchMenu]);
 
@@ -159,50 +198,15 @@ export default function PosScreen() {
       type: discountType,
       value: parseFloat(discountValue) || 0,
     };
-    
-    // Save current cart and price state before clearing cart
-    const itemsToPrint = [...cart];
-    const subtotalToPrint = subtotal;
-    const totalToPrint = total;
 
     try {
-      // Try real API first
-      const res = await createOrder({
-        order_type: orderType as 'dine-in' | 'parcel',
-        table_label: tableLabel,
-        payment_method: paymentMethod,
-        discount: discountPayload,
-        items: cart.map(c => ({ dish_id: c.id, qty: c.qty, unit_price: c.price })),
-      });
-      const kotNumber = res.kot?.kot_number ?? `K${Date.now()}`;
-      setLastKot(kotNumber);
-      
-      const finalKotOrder: KotOrder = {
-        id: res.kot ? String(res.kot.id) : `KOT-${Date.now()}`,
-        orderId: res.order ? Number(res.order.id) : undefined,
-        orderNumber: res.order?.order_number,
-        kotNumber: kotNumber,
-        orderType: orderType as OrderType,
-        tableLabel: tableLabel || (orderType === 'dine-in' ? 'Table' : 'Parcel'),
-        items: itemsToPrint,
-        status: 'pending',
-        isUrgent: false,
-        paymentMethod: paymentMethod,
-        subtotal: subtotalToPrint,
-        gst: 0,
-        total: totalToPrint,
-        createdAt: new Date(),
-        itemStatuses: Object.fromEntries(itemsToPrint.map(c => [c.id, 'pending'])),
-      };
-      setPlacedOrder(finalKotOrder);
-
-      clearCart();
-      refreshKots();
-    } catch {
-      // Fallback: use local context only
-      const kot = placeOrder(discountPayload);
+      // Offline-first placeOrder — context mein SQLite save + background sync
+      const kot = await placeOrder(discountPayload);
       setLastKot(kot.kotNumber);
       setPlacedOrder(kot);
+      refreshKots();
+    } catch (err) {
+      console.log('Place order error:', err);
     } finally {
       setDiscountValue('');
       setDiscountType('pct');
@@ -217,6 +221,9 @@ export default function PosScreen() {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      {/* ── Offline Banner ───────────────────────────────────────────── */}
+      <OfflineBanner />
+
       {/* ── Order header ─────────────────────────────────────────────── */}
       <View style={styles.orderHeader}>
         {/* Dine-in / Parcel toggle */}
@@ -387,7 +394,14 @@ export default function PosScreen() {
           price: item.price,
           dine_price: item.dine_price,
           parcel_price: item.parcel_price,
-        })}
+        }, item.qty)}
+        onRemoveItem={(itemId, qty) => {
+          if (qty) {
+            updateQty(itemId, -qty);
+          } else {
+            removeFromCart(itemId);
+          }
+        }}
         onChangeOrderType={(type) => {
           setOrderType(type);
           if (type === 'parcel') setTableLabel('Parcel');
@@ -415,79 +429,71 @@ export default function PosScreen() {
         visible={showSuccessModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowSuccessModal(false)}
+        onRequestClose={() => {
+          setShowSuccessModal(false);
+          setPlacedOrder(null);
+        }}
       >
         <View style={styles.successOverlay}>
           <View style={styles.successContent}>
-            <View style={styles.successIconBg}>
-              <Ionicons name="checkmark" size={32} color="#fff" />
-            </View>
+            {/* Header Icon */}
+            <Text style={{ fontSize: 32, marginBottom: 12 }}>🔌</Text>
             
-            <Text style={styles.successTitle}>Order Placed!</Text>
-            <Text style={styles.successSubtitle}>KOT {lastKot} has been sent to the kitchen.</Text>
+            {/* Title */}
+            <Text style={styles.successTitle}>USB Receipt Printer</Text>
             
-            {placedOrder && (
-              <View style={styles.successDetailsBox}>
-                <View style={styles.successDetailsRow}>
-                  <Text style={styles.successDetailsLabel}>Total Amount:</Text>
-                  <Text style={styles.successDetailsVal}>₹{placedOrder.total}</Text>
-                </View>
-                <View style={styles.successDetailsRow}>
-                  <Text style={styles.successDetailsLabel}>Order Type:</Text>
-                  <Text style={[styles.successDetailsVal, { textTransform: 'capitalize' }]}>{placedOrder.orderType}</Text>
-                </View>
-                {placedOrder.orderType === 'dine-in' && (
-                  <View style={styles.successDetailsRow}>
-                    <Text style={styles.successDetailsLabel}>Table:</Text>
-                    <Text style={styles.successDetailsVal}>{placedOrder.tableLabel}</Text>
-                  </View>
-                )}
-              </View>
-            )}
+            {/* Subtitle */}
+            <Text style={styles.successSubtitle}>
+              No paired USB thermal printer detected. Please connect your printer via USB and pair it below.
+            </Text>
 
-            <View style={styles.successActions}>
-              <TouchableOpacity
-                style={[styles.successBtn, styles.printCustomerBtn]}
-                onPress={async () => {
-                  if (placedOrder) {
-                    const res = await printCustomerReceipt(placedOrder, outletName, staffName);
-                    if (!res.success) {
-                      Alert.alert('Error', 'Failed to print customer receipt.');
-                    }
+            {/* Buttons & Links */}
+            <TouchableOpacity
+              style={styles.pairPrintBtn}
+              onPress={async () => {
+                if (placedOrder) {
+                  const res1 = await printCustomerReceipt(placedOrder, outletName, staffName);
+                  const res2 = await printKotReceipt(placedOrder, staffName);
+                  if (res1.success || res2.success) {
+                    setShowSuccessModal(false);
+                    setPlacedOrder(null);
+                  } else {
+                    Alert.alert('Error', 'Failed to print receipt.');
                   }
-                }}
-                activeOpacity={0.85}
-              >
-                <Ionicons name="print-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={styles.successBtnText}>Print Bill</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.successBtn, styles.printKotBtn]}
-                onPress={async () => {
-                  if (placedOrder) {
-                    const res = await printKotReceipt(placedOrder, staffName);
-                    if (!res.success) {
-                      Alert.alert('Error', 'Failed to print kitchen KOT.');
-                    }
-                  }
-                }}
-                activeOpacity={0.85}
-              >
-                <Ionicons name="restaurant-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={styles.successBtnText}>Print KOT</Text>
-              </TouchableOpacity>
-            </View>
+                }
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.pairPrintBtnText}>Pair & Print Receipt</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.successCloseBtn}
+              style={styles.skipDownloadBtn}
+              onPress={async () => {
+                if (placedOrder) {
+                  const res = await downloadReceiptsPDF(placedOrder, outletName, staffName);
+                  if (res.success) {
+                    setShowSuccessModal(false);
+                    setPlacedOrder(null);
+                  } else {
+                    Alert.alert('Error', res.error ? String(res.error) : 'Failed to download receipts.');
+                  }
+                }
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.skipDownloadBtnText}>Skip & Download Receipt</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelLink}
               onPress={() => {
                 setShowSuccessModal(false);
                 setPlacedOrder(null);
               }}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <Text style={styles.successCloseBtnText}>Done</Text>
+              <Text style={styles.cancelLinkText}>Cancel / Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -929,108 +935,75 @@ const styles = StyleSheet.create({
   // ── Success Modal Styles
   successOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   successContent: {
-    backgroundColor: Colors.surface,
-    borderRadius: 20,
+    backgroundColor: '#181c24',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2d3748',
     width: '100%',
     maxWidth: 340,
     padding: 24,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 8,
   },
-  successIconBg: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: STAFF_GREEN,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
   successTitle: {
-    fontSize: FontSize.xl,
+    fontSize: 22,
     fontWeight: FontWeight.bold,
-    color: Colors.text,
+    color: '#4fa8ff',
     marginBottom: 8,
+    textAlign: 'center',
   },
   successSubtitle: {
-    fontSize: FontSize.sm,
-    color: Colors.textMuted,
+    fontSize: 14.5,
+    color: '#a0aec0',
     textAlign: 'center',
-    marginBottom: 16,
+    lineHeight: 20,
+    marginBottom: 24,
   },
-  successDetailsBox: {
-    backgroundColor: Colors.bg,
-    borderRadius: 10,
+  pairPrintBtn: {
+    backgroundColor: '#3b82f6',
+    borderRadius: 12,
     width: '100%',
-    padding: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  successDetailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  successDetailsLabel: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-  },
-  successDetailsVal: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semibold,
-    color: Colors.text,
-  },
-  successActions: {
-    flexDirection: 'row',
-    gap: 10,
-    width: '100%',
+    paddingVertical: 14,
+    alignItems: 'center',
     marginBottom: 12,
   },
-  successBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    height: 44,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  printCustomerBtn: {
-    backgroundColor: Colors.primary,
-  },
-  printKotBtn: {
-    backgroundColor: STAFF_GREEN,
-  },
-  successBtnText: {
-    color: '#fff',
-    fontSize: FontSize.sm,
+  pairPrintBtnText: {
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: FontWeight.bold,
   },
-  successCloseBtn: {
-    width: '100%',
-    height: 44,
-    borderRadius: 10,
+  skipDownloadBtn: {
+    backgroundColor: '#202632',
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    justifyContent: 'center',
+    borderColor: '#374151',
+    borderRadius: 12,
+    width: '100%',
+    paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 4,
-    backgroundColor: Colors.surface,
+    marginBottom: 20,
   },
-  successCloseBtnText: {
-    color: Colors.textMuted,
-    fontSize: FontSize.sm,
+  skipDownloadBtnText: {
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: FontWeight.bold,
+  },
+  cancelLink: {
+    padding: 4,
+  },
+  cancelLinkText: {
+    color: '#a0aec0',
+    fontSize: 14.5,
+    textDecorationLine: 'underline',
   },
 
   // ── Cart Modal overlay

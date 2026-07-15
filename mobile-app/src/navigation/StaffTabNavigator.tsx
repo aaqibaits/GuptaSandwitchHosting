@@ -30,7 +30,7 @@ import PosScreen        from '../screens/staff/PosScreen';
 import KotScreen        from '../screens/staff/KotScreen';
 import LiveOrdersScreen from '../screens/staff/LiveOrdersScreen';
 import ReportsScreen    from '../screens/staff/ReportsScreen';
-import StaffMenuScreen  from '../screens/staff/StaffMenuScreen';
+import AccountingScreen from '../screens/admin/AccountingScreen';
 import StaffTopBar      from '../components/staff/StaffTopBar';
 import { StaffOrderProvider } from '../context/StaffOrderContext';
 import { StaffTabParamList } from '../types';
@@ -49,11 +49,11 @@ type TabDef = {
 };
 
 const ALL_TABS: TabDef[] = [
-  { name: 'POS',        permissionKey: 'pos',         active: 'cart',       inactive: 'cart-outline',       label: 'POS',     component: PosScreen        },
-  { name: 'KOT',        permissionKey: 'kot',         active: 'restaurant', inactive: 'restaurant-outline', label: 'KOT',     component: KotScreen        },
-  { name: 'LiveOrders', permissionKey: 'live-orders', active: 'flash',      inactive: 'flash-outline',      label: 'Live',    component: LiveOrdersScreen },
-  { name: 'Reports',    permissionKey: 'reports',     active: 'bar-chart',  inactive: 'bar-chart-outline',  label: 'Reports', component: ReportsScreen    },
-  { name: 'Menu',       permissionKey: 'menu',        active: 'grid',       inactive: 'grid-outline',       label: 'Menu',    component: StaffMenuScreen  },
+  { name: 'POS',        permissionKey: 'pos',         active: 'cart',       inactive: 'cart-outline',       label: 'POS',        component: PosScreen        },
+  { name: 'KOT',        permissionKey: 'kot',         active: 'restaurant', inactive: 'restaurant-outline', label: 'KOT',        component: KotScreen        },
+  { name: 'LiveOrders', permissionKey: 'live-orders', active: 'flash',      inactive: 'flash-outline',      label: 'Live',       component: LiveOrdersScreen },
+  { name: 'Reports',    permissionKey: 'reports',     active: 'bar-chart',  inactive: 'bar-chart-outline',  label: 'Reports',    component: ReportsScreen    },
+  { name: 'Accounting', permissionKey: 'accounting',  active: 'calculator', inactive: 'calculator-outline', label: 'Accounting', component: AccountingScreen },
 ];
 
 const STAFF_GREEN = Colors.primary;

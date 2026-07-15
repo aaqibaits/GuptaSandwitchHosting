@@ -98,7 +98,7 @@ export type StaffTabParamList = {
   KOT: undefined;
   LiveOrders: undefined;
   Reports: undefined;
-  Menu: undefined;
+  Accounting: undefined;
 };
 
 export type RootStackParamList = {

@@ -7,7 +7,8 @@
  */
 
 import * as Print from 'expo-print';
-import { Image } from 'react-native';
+import * as Sharing from 'expo-sharing';
+import { Image, Platform } from 'react-native';
 import { KotOrder, LiveOrder } from '../types';
 import {
   getSavedUSBPrinters,
@@ -181,8 +182,8 @@ const thermalStyles = `
  * Print a customer billing receipt / invoice.
  */
 export async function printCustomerReceipt(order: KotOrder, outletName?: string, staffName?: string) {
-  // WebUSB support check
-  if (typeof navigator !== 'undefined' && (navigator as any).usb) {
+  // WebUSB or Native Android USB support check
+  if ((typeof navigator !== 'undefined' && (navigator as any).usb) || Platform.OS === 'android') {
     try {
       const devices = await getSavedUSBPrinters();
       let printerDevice = devices.length > 0 ? devices[0] : null;
@@ -199,10 +200,17 @@ export async function printCustomerReceipt(order: KotOrder, outletName?: string,
         return { success: true };
       }
     } catch (usbError) {
-      console.warn('[PrintService] WebUSB customer print failed, falling back to expo-print:', usbError);
+      console.warn('[PrintService] WebUSB customer print failed:', usbError);
+      return { success: false, error: usbError };
     }
   }
+  return { success: false, error: 'No paired USB receipt printer detected. Please connect your printer via USB.' };
+}
 
+/**
+ * Generate HTML string for customer bill.
+ */
+export function generateCustomerReceiptHTML(order: KotOrder, outletName?: string, staffName?: string): string {
   const details = getOutletDetails(outletName);
   const logoUri = getLogoUri();
   
@@ -210,7 +218,7 @@ export async function printCustomerReceipt(order: KotOrder, outletName?: string,
   const hasDiscount = order.subtotal - order.total > 0;
   const discountAmt = Math.max(0, order.subtotal - order.total);
 
-  const html = `
+  return `
     <!DOCTYPE html>
     <html>
       <head>
@@ -310,22 +318,14 @@ export async function printCustomerReceipt(order: KotOrder, outletName?: string,
       </body>
     </html>
   `;
-
-  try {
-    await Print.printAsync({ html });
-    return { success: true };
-  } catch (error) {
-    console.error('Error printing customer receipt:', error);
-    return { success: false, error };
-  }
 }
 
 /**
  * Print a Kitchen Order Ticket (KOT).
  */
 export async function printKotReceipt(kot: KotOrder, staffName?: string) {
-  // WebUSB support check
-  if (typeof navigator !== 'undefined' && (navigator as any).usb) {
+  // WebUSB or Native Android USB support check
+  if ((typeof navigator !== 'undefined' && (navigator as any).usb) || Platform.OS === 'android') {
     try {
       const devices = await getSavedUSBPrinters();
       let printerDevice = devices.length > 0 ? devices[0] : null;
@@ -342,11 +342,18 @@ export async function printKotReceipt(kot: KotOrder, staffName?: string) {
         return { success: true };
       }
     } catch (usbError) {
-      console.warn('[PrintService] WebUSB KOT print failed, falling back to expo-print:', usbError);
+      console.warn('[PrintService] WebUSB KOT print failed:', usbError);
+      return { success: false, error: usbError };
     }
   }
+  return { success: false, error: 'No paired USB receipt printer detected. Please connect your printer via USB.' };
+}
 
-  const html = `
+/**
+ * Generate HTML string for kitchen KOT receipt.
+ */
+export function generateKotHTML(kot: KotOrder, staffName?: string): string {
+  return `
     <!DOCTYPE html>
     <html>
       <head>
@@ -415,13 +422,41 @@ export async function printKotReceipt(kot: KotOrder, staffName?: string) {
       </body>
     </html>
   `;
+}
+
+/**
+ * Export and share both Customer Bill and KOT as separate PDF files at the same time.
+ */
+export async function downloadReceiptsPDF(order: KotOrder, outletName?: string, staffName?: string) {
+  const billHtml = generateCustomerReceiptHTML(order, outletName, staffName);
+  const kotHtml = generateKotHTML(order, staffName);
 
   try {
-    await Print.printAsync({ html });
-    return { success: true };
-  } catch (error) {
-    console.error('Error printing KOT receipt:', error);
-    return { success: false, error };
+    const { uri: billUri } = await Print.printToFileAsync({ html: billHtml });
+    const { uri: kotUri } = await Print.printToFileAsync({ html: kotHtml });
+
+    if (await Sharing.isAvailableAsync()) {
+      // Share Customer Bill PDF
+      await Sharing.shareAsync(billUri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'Download Bill PDF',
+        UTI: 'com.adobe.pdf',
+      });
+      
+      // Share KOT PDF
+      await Sharing.shareAsync(kotUri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'Download KOT PDF',
+        UTI: 'com.adobe.pdf',
+      });
+      
+      return { success: true };
+    } else {
+      return { success: false, error: 'Sharing is not available on this device' };
+    }
+  } catch (err) {
+    console.error('[PrintService] Failed to generate/share PDF files:', err);
+    return { success: false, error: err };
   }
 }
 
@@ -429,8 +464,8 @@ export async function printKotReceipt(kot: KotOrder, staffName?: string) {
  * Print a customer receipt / ticket for a third-party platform order (Swiggy/Zomato).
  */
 export async function printLiveOrderReceipt(order: LiveOrder, outletName?: string, staffName?: string) {
-  // WebUSB support check
-  if (typeof navigator !== 'undefined' && (navigator as any).usb) {
+  // WebUSB or Native Android USB support check
+  if ((typeof navigator !== 'undefined' && (navigator as any).usb) || Platform.OS === 'android') {
     try {
       const devices = await getSavedUSBPrinters();
       let printerDevice = devices.length > 0 ? devices[0] : null;
@@ -447,133 +482,9 @@ export async function printLiveOrderReceipt(order: LiveOrder, outletName?: strin
         return { success: true };
       }
     } catch (usbError) {
-      console.warn('[PrintService] WebUSB Live Order print failed, falling back to expo-print:', usbError);
+      console.warn('[PrintService] WebUSB Live Order print failed:', usbError);
+      return { success: false, error: usbError };
     }
   }
-
-  const details = getOutletDetails(outletName);
-  const logoUri = getLogoUri();
-  const platColor = order.platform === 'Swiggy' ? '#FF5200' : '#E23744';
-
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Order ${order.orderId}</title>
-        <style>
-          ${thermalStyles}
-          .platform-badge {
-            display: inline-block;
-            background-color: ${platColor};
-            color: #ffffff;
-            font-weight: bold;
-            padding: 4px 10px;
-            font-size: 14px;
-            border-radius: 4px;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-          }
-          .cust-info {
-            background-color: #f9f9f9;
-            border: 1.2px solid #e3e3e3;
-            padding: 8px;
-            margin-bottom: 10px;
-            font-size: 13px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="center">
-          <span class="platform-badge">${order.platform} ORDER</span>
-        </div>
-
-        <!-- Header: Logo left, details right -->
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; margin-top: 8px;">
-          <div style="width: 25%; text-align: left;">
-            ${logoUri ? `<img src="${logoUri}" style="width: 65px; height: 65px; object-fit: contain;" />` : ''}
-          </div>
-          <div style="width: 75%; text-align: right;">
-            <div style="font-size: 20px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
-              ${details.name}
-            </div>
-            <div style="font-size: 13.5px; margin-top: 2px;">${details.address}</div>
-            <div style="font-size: 13.5px; margin-top: 2px;">Ph: ${details.phone}</div>
-          </div>
-        </div>
-
-        <div class="dashed-divider"></div>
-
-        <table class="meta-table">
-          <tr>
-            <td style="width: 60%;"><strong>Order ID:</strong> ${order.orderId}</td>
-            <td style="width: 40%; text-align: right;"><strong>Date:</strong> ${formatReceiptDate(order.createdAt)}</td>
-          </tr>
-          <tr>
-            <td><strong>Platform:</strong> ${order.platform}</td>
-            <td style="text-align: right;"><strong>Manager:</strong> ${staffName || 'Pavan'}</td>
-          </tr>
-        </table>
-
-        <div class="cust-info">
-          <div class="bold" style="font-size: 13px; margin-bottom: 4px; text-transform: uppercase;">Customer Details:</div>
-          <div>Name:  ${order.customerName}</div>
-          <div>Phone: ${order.customerPhone}</div>
-          ${order.etaMinutes ? `<div>ETA:   ${order.etaMinutes} mins</div>` : ''}
-        </div>
-
-        <div class="dashed-divider"></div>
-
-        <table class="items-table">
-          <thead>
-            <tr>
-              <th style="text-align: left; width: 65%;">ITEM</th>
-              <th style="text-align: right; width: 15%;">QTY</th>
-              <th style="text-align: right; width: 20%;">AMOUNT</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${order.items
-              .map(
-                (item) => `
-              <tr class="item-row-dotted">
-                <td style="text-align: left;">${item.name}</td>
-                <td style="text-align: right;">${item.qty}</td>
-                <td style="text-align: right;">₹${(item.price * item.qty).toFixed(2)}</td>
-              </tr>
-            `
-              )
-              .join('')}
-          </tbody>
-        </table>
-
-        <div class="totals-container">
-          <div class="totals-row grand-total">
-            <span>TOTAL AMOUNT</span>
-            <span>₹${order.total.toFixed(2)}</span>
-          </div>
-        </div>
-
-        ${order.specialInstructions ? `
-        <div class="instruction-box">
-          <div class="bold" style="text-transform: uppercase; font-size: 12px; margin-bottom: 2px;">Instructions:</div>
-          <div>${order.specialInstructions}</div>
-        </div>
-        ` : ''}
-
-        <div class="footer-thankyou">
-          Thank you
-        </div>
-      </body>
-    </html>
-  `;
-
-  try {
-    await Print.printAsync({ html });
-    return { success: true };
-  } catch (error) {
-    console.error('Error printing live order receipt:', error);
-    return { success: false, error };
-  }
+  return { success: false, error: 'No paired USB receipt printer detected. Please connect your printer via USB.' };
 }

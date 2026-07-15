@@ -68,11 +68,11 @@ const STAFF_SCREENS = [
   { key: 'kot',         label: 'KOT' },
   { key: 'reports',     label: 'Reports' },
   { key: 'live-orders', label: 'Live Orders' },
-  { key: 'menu',        label: 'Menu' },
+  { key: 'accounting',  label: 'Accounting' },
 ];
 
 const PRESET_ROLES = [
-  { label: 'Manager',       appRole: 'Staff' as const, desc: 'Full access to staff screens', permissions: { admin: [], staff: ['pos', 'kot', 'reports', 'live-orders', 'menu'] } },
+  { label: 'Manager',       appRole: 'Staff' as const, desc: 'Full access to staff screens', permissions: { admin: [], staff: ['pos', 'kot', 'reports', 'live-orders', 'accounting'] } },
   { label: 'Cashier',       appRole: 'Staff' as const, desc: 'POS + Live Orders',            permissions: { admin: [], staff: ['pos', 'live-orders'] } },
   { label: 'Kitchen Staff', appRole: 'Staff' as const, desc: 'KOT Only',                     permissions: { admin: [], staff: ['kot'] } },
   { label: 'Custom',        appRole: 'Staff' as const, desc: 'Pick any screens',             permissions: { admin: [], staff: [] } },

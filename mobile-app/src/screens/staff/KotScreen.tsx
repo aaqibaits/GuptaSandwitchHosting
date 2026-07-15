@@ -23,6 +23,7 @@ import { useStaffOrder } from '../../context/StaffOrderContext';
 import { OrderStatus, KotOrder } from '../../types';
 import EmptyState from '../../components/common/EmptyState';
 import { printCustomerReceipt, printKotReceipt } from '../../services/printService';
+import OfflineBanner from '../../components/common/OfflineBanner';
 
 const STAFF_GREEN = Colors.primary;
 
@@ -321,6 +322,9 @@ export default function KotScreen() {
 
   return (
     <View style={styles.root}>
+
+      {/* ── Offline Banner ────────────────────────────────────────────── */}
+      <OfflineBanner />
 
       {/* ── Stat cards row ────────────────────────────────────────────── */}
       {/* ── Stat cards row ────────────────────────────────────────────── */}

@@ -299,15 +299,17 @@ const getKots = async (outletId, filters = {}, client) => {
     `SELECT
        k.id, k.kot_number, k.order_id, k.outlet_id, k.table_number, k.order_type,
        k.status, k.is_urgent, k.sent_time, k.ready_time, k.served_time, k.created_by,
-       o.order_number, o.payment_method, o.order_status,
+       o.order_number, o.payment_method, o.order_status, o.subtotal, o.total_amount,
        EXTRACT(EPOCH FROM (NOW() - k.sent_time)) / 60 AS minutes_elapsed,
        COALESCE(
          json_agg(
            json_build_object(
              'id', ki.id,
              'order_item_id', ki.order_item_id,
+             'dish_id', oi.dish_id,
              'dish_name', ki.dish_name,
              'quantity', ki.quantity,
+             'price', oi.unit_price,
              'is_ready', ki.is_ready,
              'ready_time', ki.ready_time
            ) ORDER BY ki.id
@@ -317,8 +319,9 @@ const getKots = async (outletId, filters = {}, client) => {
      FROM kot k
      JOIN orders o ON o.id = k.order_id
      LEFT JOIN kot_items ki ON ki.kot_id = k.id
+     LEFT JOIN order_items oi ON oi.id = ki.order_item_id
      WHERE ${conditions.join(' AND ')}
-     GROUP BY k.id, o.order_number, o.payment_method, o.order_status
+     GROUP BY k.id, o.order_number, o.payment_method, o.order_status, o.subtotal, o.total_amount
      ORDER BY k.is_urgent DESC, k.sent_time ASC`,
     params
   );
@@ -328,7 +331,7 @@ const getKots = async (outletId, filters = {}, client) => {
 const getKotById = async (kotId, outletId, client) => {
   if (outletId) {
     const { rows } = await getClient(client).query(
-      `SELECT k.*, o.order_number, o.order_status
+      `SELECT k.*, o.order_number, o.order_status, o.subtotal, o.total_amount
        FROM kot k
        JOIN orders o ON o.id = k.order_id
        WHERE k.id = $1 AND k.outlet_id = $2`,
@@ -338,7 +341,7 @@ const getKotById = async (kotId, outletId, client) => {
   }
 
   const { rows } = await getClient(client).query(
-    `SELECT k.*, o.order_number, o.order_status
+    `SELECT k.*, o.order_number, o.order_status, o.subtotal, o.total_amount
      FROM kot k
      JOIN orders o ON o.id = k.order_id
      WHERE k.id = $1`,
@@ -349,7 +352,7 @@ const getKotById = async (kotId, outletId, client) => {
 
 const getKotItems = async (kotId, client) => {
   const { rows } = await getClient(client).query(
-    `SELECT ki.*, oi.dish_id, oi.is_ready AS order_item_ready
+    `SELECT ki.*, oi.dish_id, oi.unit_price AS price, oi.is_ready AS order_item_ready
      FROM kot_items ki
      JOIN order_items oi ON oi.id = ki.order_item_id
      WHERE ki.kot_id = $1

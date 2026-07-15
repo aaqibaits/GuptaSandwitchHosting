@@ -37,6 +37,7 @@ import { FontSize, FontWeight } from '../../constants/typography';
 import { loginAdmin, loginUser } from '../../services/authApi';
 import { ApiError, BASE_URL } from '../../services/api';
 import { AuthUser } from '../../../App';
+import { loadAuthSession } from '../../services/offlineStorage';
 
 const { width: W } = Dimensions.get('window');
 
@@ -61,7 +62,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     }
     setLoading(true);
     try {
-      // Try admin login first; fall back to staff/user login on 401/403
+      // ── Step 1: Online login try karo ─────────────────────────────────
       let response;
       try {
         response = await loginAdmin(trimmedEmail, password);
@@ -106,9 +107,19 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         const msg = err.data?.message ?? err.data?.error ?? err.message;
         setError(msg || `Server error (${err.status})`);
       } else {
-        // Network-level failure (wrong IP, server down, no WiFi)
+        // ── Step 2: Network fail → Offline login try karo ─────────────────
+        // Agar phone mein pehle se saved session hai to use karo
+        const savedUser = await loadAuthSession();
+        if (savedUser && savedUser.email === trimmedEmail) {
+          // Offline login successful!
+          console.log('🔌 Offline login: using saved session');
+          onLogin(savedUser);
+          return; // setLoading(false) finally mein hoga
+        }
+
+        // Koi saved session nahi — error dikhao
         setError(
-          `Cannot reach server at ${BASE_URL}.\n\nMake sure:\n• Your phone & PC are on the same Wi-Fi\n• The backend server is running`
+          `No internet connection.\n\nPlease connect to internet for first-time login.\nOnce logged in, you can use the app offline.`
         );
       }
     } finally {

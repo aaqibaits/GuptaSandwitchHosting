@@ -1,10 +1,14 @@
 /**
  * utils/webusbPrinter.ts
  * ──────────────────────
- * WebUSB Thermal Printer Utility for ESC/POS Printing
+ * WebUSB & Native Android USB Thermal Printer Utility for ESC/POS Printing
  */
 
+import { Platform, NativeModules, Alert } from 'react-native';
 import { KotOrder, LiveOrder } from '../types';
+
+const { USBPrinterModule } = NativeModules;
+let savedAndroidPrinterId: number | null = null;
 
 // ESC/POS Commands
 const ESC = 0x1b;
@@ -30,15 +34,104 @@ const QUANTITY_WORDS: Record<string, number> = {
 };
 
 /**
+ * Helper to encode Uint8Array bytes to Base64 string for the React Native bridge.
+ */
+function uint8ArrayToBase64(uint8: Uint8Array): string {
+  let binary = '';
+  const len = uint8.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(uint8[i]);
+  }
+  
+  if (typeof btoa === 'function') {
+    return btoa(binary);
+  }
+  
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let base64 = '';
+  let i = 0;
+  while (i < len) {
+    const byte1 = uint8[i++];
+    const byte2 = i < len ? uint8[i++] : NaN;
+    const byte3 = i < len ? uint8[i++] : NaN;
+
+    const enc1 = byte1 >> 2;
+    const enc2 = ((byte1 & 3) << 4) | (isNaN(byte2) ? 0 : byte2 >> 4);
+    const enc3 = isNaN(byte2) ? 64 : ((byte2 & 15) << 2) | (isNaN(byte3) ? 0 : byte3 >> 6);
+    const enc4 = isNaN(byte3) ? 64 : byte3 & 63;
+
+    base64 += chars.charAt(enc1) + chars.charAt(enc2) +
+              (enc3 === 64 ? '=' : chars.charAt(enc3)) +
+              (enc4 === 64 ? '=' : chars.charAt(enc4));
+  }
+  return base64;
+}
+
+/**
  * Requests a USB device matching thermal printers.
  */
 export const requestUSBPrinter = async (): Promise<any> => {
+  if (Platform.OS === 'android' && USBPrinterModule) {
+    try {
+      const list = await USBPrinterModule.listPrinters();
+      if (list.length === 0) {
+        throw new Error('No USB devices detected. Please connect your printer via USB.');
+      }
+      
+      if (list.length === 1) {
+        const device = list[0];
+        const granted = await USBPrinterModule.requestPermission(device.deviceId);
+        if (!granted) {
+          throw new Error('Permission denied to access USB printer.');
+        }
+        savedAndroidPrinterId = device.deviceId;
+        return device;
+      }
+
+      return new Promise((resolve, reject) => {
+        const buttons = list.slice(0, 2).map((device: any) => ({
+          text: device.productName || `USB Device ${device.deviceId}`,
+          onPress: async () => {
+            try {
+              const granted = await USBPrinterModule.requestPermission(device.deviceId);
+              if (granted) {
+                savedAndroidPrinterId = device.deviceId;
+                resolve(device);
+              } else {
+                reject(new Error('Permission denied to access USB printer.'));
+              }
+            } catch (e) {
+              reject(e);
+            }
+          }
+        }));
+
+        buttons.push({
+          text: 'Cancel',
+          onPress: () => reject(new Error('Printer selection cancelled.')),
+          style: 'cancel' as any
+        });
+
+        Alert.alert(
+          '🔌 Select USB Printer',
+          'Multiple USB devices detected. Please choose your receipt printer:',
+          buttons,
+          { cancelable: true, onDismiss: () => reject(new Error('Printer selection dismissed.')) }
+        );
+      });
+    } catch (e: any) {
+      console.error('[webusbPrinter] Android printer request failed:', e);
+      throw e;
+    }
+  }
+
+  // Web fallback
   if (typeof navigator === 'undefined' || !(navigator as any).usb) {
     throw new Error('WebUSB not supported in this environment');
   }
   try {
     const device = await (navigator as any).usb.requestDevice({
-      filters: [] // Empty filters allows selecting any USB device
+      filters: []
     });
     return device;
   } catch (error) {
@@ -51,6 +144,24 @@ export const requestUSBPrinter = async (): Promise<any> => {
  * Retrieves already paired/authorized USB devices.
  */
 export const getSavedUSBPrinters = async (): Promise<any[]> => {
+  if (Platform.OS === 'android' && USBPrinterModule) {
+    try {
+      const list = await USBPrinterModule.listPrinters();
+      if (savedAndroidPrinterId !== null) {
+        const saved = list.find((d: any) => d.deviceId === savedAndroidPrinterId);
+        if (saved) return [saved];
+      }
+      const printers = list.filter((d: any) => d.isPrinterClass);
+      if (printers.length > 0) return [printers[0]];
+      if (list.length > 0) return [list[0]];
+      return [];
+    } catch (e) {
+      console.error('[webusbPrinter] getSavedUSBPrinters failed:', e);
+      return [];
+    }
+  }
+
+  // Web fallback
   if (typeof navigator === 'undefined' || !(navigator as any).usb) return [];
   try {
     return await (navigator as any).usb.getDevices();
@@ -64,6 +175,21 @@ export const getSavedUSBPrinters = async (): Promise<any[]> => {
  * Sends ESC/POS command bytes to a paired USB device.
  */
 export const sendBytesToUSBPrinter = async (device: any, bytes: Uint8Array): Promise<void> => {
+  if (Platform.OS === 'android' && USBPrinterModule) {
+    try {
+      const base64Bytes = uint8ArrayToBase64(bytes);
+      const success = await USBPrinterModule.printRawBytes(device.deviceId, base64Bytes);
+      if (!success) {
+        throw new Error('Failed to print raw bytes to USB device.');
+      }
+      return;
+    } catch (err) {
+      console.error('Android native print error:', err);
+      throw err;
+    }
+  }
+
+  // Web fallback
   try {
     await device.open();
     await device.selectConfiguration(1);

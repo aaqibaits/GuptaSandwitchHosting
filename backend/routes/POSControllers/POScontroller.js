@@ -69,11 +69,14 @@ const formatKot = (kot) => ({
   orderNumber: kot.order_number,
   paymentMethod: kot.payment_method,
   orderStatus: kot.order_status,
+  subtotal: Number(kot.subtotal || 0),
+  total: Number(kot.total_amount || 0),
   items: (kot.items || []).map((item) => ({
-    id: item.id,
+    id: item.dish_id || item.id,
     orderItemId: item.order_item_id,
     dishName: item.dish_name,
     quantity: item.quantity,
+    price: Number(item.price || 0),
     isReady: item.is_ready,
     readyTime: item.ready_time
   })),

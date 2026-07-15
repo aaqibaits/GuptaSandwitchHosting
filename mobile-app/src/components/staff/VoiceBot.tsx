@@ -48,6 +48,7 @@ interface VoiceBotProps {
     qty: number;
     emoji?: string;
   }) => void;
+  onRemoveItem: (itemId: number, qty?: number) => void;
   onChangeOrderType: (type: 'dine-in' | 'parcel') => void;
   showToast: (msg: string) => void;
   dishes: VoiceBotDish[];
@@ -221,7 +222,7 @@ function cleanDishName(text: string): string {
   return cleaned.replace(/\s+/g, ' ').trim();
 }
 
-export default function VoiceBot({ onAddItem, onChangeOrderType, showToast, dishes, cartActive }: VoiceBotProps) {
+export default function VoiceBot({ onAddItem, onRemoveItem, onChangeOrderType, showToast, dishes, cartActive }: VoiceBotProps) {
   const insets = useSafeAreaInsets();
   const bottomOffset = cartActive ? (144 + insets.bottom) : (76 + insets.bottom);
   
@@ -231,6 +232,7 @@ export default function VoiceBot({ onAddItem, onChangeOrderType, showToast, dish
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
+  const hasProcessedRef = useRef(false);
 
   const startPulse = useCallback(() => {
     pulseLoop.current = Animated.loop(
@@ -289,9 +291,48 @@ export default function VoiceBot({ onAddItem, onChangeOrderType, showToast, dish
     console.log('[VoiceBot] Spoken input segments:', segments);
 
     for (const segment of segments) {
+      const isRemoval = [
+        'remove', 'delete', 'cancel', 'nikalo', 'nikal', 'hatao', 'hata', 'vaja', 'waza'
+      ].some(kw => segment.toLowerCase().includes(kw));
+
+      if (isRemoval) {
+        let cleanSegForDish = segment.toLowerCase();
+        [
+          'remove', 'delete', 'cancel', 'nikalo', 'nikal do', 'nikal dena', 'nikal', 'hatao', 'hata', 'vaja', 'waza', 'the', 'se'
+        ].forEach(kw => {
+          cleanSegForDish = cleanSegForDish.replace(new RegExp(`\\b${kw}\\b`, 'g'), '');
+        });
+        cleanSegForDish = cleanDishName(cleanSegForDish);
+
+        let match = findBestDish(cleanSegForDish, dishes);
+        if (!match) {
+          match = findBestDish(segment, dishes);
+        }
+
+        if (match) {
+          matchedAny = true;
+          const segmentWithoutDish = segment.toLowerCase().replace(match.name.toLowerCase(), '');
+          const hasExplicitNumber = /\b\d+\b/.test(segmentWithoutDish) || 
+            Object.keys(QUANTITY_WORDS).some(word => 
+              new RegExp(`\\b${word}\\b`).test(segmentWithoutDish)
+            );
+
+          if (onRemoveItem) {
+            if (hasExplicitNumber) {
+              const qty = parseQuantity(segment, match.name);
+              onRemoveItem(match.id, qty);
+              showToast(`${qty} × ${match.name} removed`);
+            } else {
+              onRemoveItem(match.id);
+              showToast(`${match.name} removed`);
+            }
+          }
+        }
+        continue;
+      }
+
       const cleanedSeg = cleanDishName(segment);
       let match = findBestDish(cleanedSeg, dishes);
-
       if (!match) {
         match = findBestDish(segment, dishes);
       }
@@ -301,18 +342,15 @@ export default function VoiceBot({ onAddItem, onChangeOrderType, showToast, dish
         const qty = parseQuantity(segment, match.name);
         console.log('[VoiceBot] Segment:', segment, 'Matched:', match.name, 'Quantity:', qty);
 
-        // Add items to cart
-        for (let i = 0; i < qty; i++) {
-          onAddItem({
-            id: match.id,
-            name: match.name,
-            price: match.dine_price ?? match.price,
-            dine_price: match.dine_price,
-            parcel_price: match.parcel_price,
-            qty: 1,
-            emoji: match.emoji,
-          });
-        }
+        onAddItem({
+          id: match.id,
+          name: match.name,
+          price: match.dine_price ?? match.price,
+          dine_price: match.dine_price,
+          parcel_price: match.parcel_price,
+          qty: qty,
+          emoji: match.emoji,
+        });
 
         const quantityWord = qty === 1 ? '' : `${qty} × `;
         showToast(`${quantityWord}${match.name} added`);
@@ -320,7 +358,7 @@ export default function VoiceBot({ onAddItem, onChangeOrderType, showToast, dish
     }
 
     return matchedAny;
-  }, [dishes, onAddItem, onChangeOrderType, showToast]);
+  }, [dishes, onAddItem, onRemoveItem, onChangeOrderType, showToast]);
 
   const showFallbackInput = () => {
     setFallbackText('');
@@ -345,8 +383,25 @@ export default function VoiceBot({ onAddItem, onChangeOrderType, showToast, dish
     Voice.onSpeechStart = () => {
       setListening(true);
       startPulse();
+      hasProcessedRef.current = false;
+    };
+    Voice.onSpeechPartialResults = (e: any) => {
+      if (hasProcessedRef.current) return;
+      const alternatives = e.value || [];
+      console.log('[VoiceBot] Heard (Partial) alternatives:', alternatives);
+
+      for (const heardText of alternatives) {
+        if (processSpeechText(heardText)) {
+          hasProcessedRef.current = true;
+          Voice.stop().catch(() => {});
+          setListening(false);
+          stopPulse();
+          break;
+        }
+      }
     };
     Voice.onSpeechResults = (e: any) => {
+      if (hasProcessedRef.current) return;
       const alternatives = e.value || [];
       console.log('[VoiceBot] Heard (Voice) alternatives:', alternatives);
       
@@ -354,6 +409,8 @@ export default function VoiceBot({ onAddItem, onChangeOrderType, showToast, dish
       for (const heardText of alternatives) {
         if (processSpeechText(heardText)) {
           matched = true;
+          hasProcessedRef.current = true;
+          Voice.stop().catch(() => {});
           break;
         }
       }
@@ -408,6 +465,7 @@ export default function VoiceBot({ onAddItem, onChangeOrderType, showToast, dish
       try {
         setListening(true);
         startPulse();
+        hasProcessedRef.current = false;
         await Voice.start('en-IN');
       } catch (err) {
         console.error('[VoiceBot] Start error:', err);
